@@ -1,0 +1,111 @@
+@*
+Registro, origen Frontend_Plantilla/Acceso/Registro.html. Layout _LayoutPublico. Publica
+Formulario: POST a /Acceso/Registro con antifalsificacion
+  Nombre y Apellido obligatorios hasta 100
+  Cedula opcional hasta 20 y si se da no puede repetirse
+  Telefono opcional hasta 20. Correo obligatorio hasta 150 y unico
+  Contrasena minimo 8 hasta 255. ConfirmarContrasena debe coincidir. Terminos casilla obligatoria
+Todavia no hay accion POST, falta conectar SP_Usuario_Registrar desde LEN_API
+El hash de la contrasena se calcula en el API nunca en la base ni en el navegador
+*@
+@model LEN_Web.Models.RegistroViewModel
+@{
+    ViewData["Titulo"] = "Crear cuenta";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+        <div class="mb-4">
+            <h1 class="LenTitular">Crear cuenta</h1>
+            <p class="LenTexto LenTexto--Guia mt-2 mb-0">Complete sus datos para registrarse en LEN.</p>
+        </div>
+
+        <form method="post" action="/Acceso/Registro" autocomplete="off">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="LenAviso LenAviso--Error mb-4" role="alert">
+                    <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-x-circle"></i></span>
+                    <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">El correo electr&oacute;nico ya est&aacute; registrado.</p></div>
+                </div>
+            }
+
+            <div class="row g-3">
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="Nombre">Nombre</label>
+                    <input asp-for="Nombre" class="LenCampo" maxlength="100" autocomplete="given-name" required>
+                    <span asp-validation-for="Nombre" class="LenError"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="Apellido">Apellido</label>
+                    <input asp-for="Apellido" class="LenCampo" maxlength="100" autocomplete="family-name" required>
+                    <span asp-validation-for="Apellido" class="LenError"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="Cedula">C&eacute;dula <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                    <input asp-for="Cedula" class="LenCampo" maxlength="20">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="Telefono">Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                    <input asp-for="Telefono" class="LenCampo" maxlength="20" autocomplete="tel">
+                </div>
+
+                <div class="col-12">
+                    <label class="LenEtiqueta" asp-for="Correo">Correo electr&oacute;nico</label>
+                    <input asp-for="Correo" class="LenCampo" maxlength="150" autocomplete="email" required>
+                    <span asp-validation-for="Correo" class="LenError"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="Contrasena">Contrase&ntilde;a</label>
+                    <div class="LenCampoGrupo">
+                        <input asp-for="Contrasena" class="LenCampo" minlength="8" maxlength="255" autocomplete="new-password" required>
+                        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono" aria-label="Mostrar u ocultar contrase&ntilde;a">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Contrasena" class="LenError"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="LenEtiqueta" asp-for="ConfirmarContrasena">Confirmar contrase&ntilde;a</label>
+                    <div class="LenCampoGrupo">
+                        <input asp-for="ConfirmarContrasena" class="LenCampo" minlength="8" maxlength="255" autocomplete="new-password" required>
+                        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono" aria-label="Mostrar u ocultar contrase&ntilde;a">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="ConfirmarContrasena" class="LenError"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="LenOpcion mb-0">
+                        <input asp-for="Terminos" required>
+                        <label asp-for="Terminos">Acepto los t&eacute;rminos y condiciones.</label>
+                    </div>
+                    <span asp-validation-for="Terminos" class="LenError"></span>
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">Crear cuenta</button>
+                </div>
+            </div>
+        </form>
+
+        <p class="mt-4 mb-0">
+            &iquest;Ya tiene una cuenta?
+            <a class="LenEnlace" asp-controller="Acceso" asp-action="IniciarSesion">Iniciar sesi&oacute;n</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

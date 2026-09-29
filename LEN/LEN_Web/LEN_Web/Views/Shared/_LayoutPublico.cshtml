@@ -1,0 +1,190 @@
+@*
+LayoutPublico, origen Frontend_Plantilla/Compartido/LayoutPublico.html
+Lo usan Publico y Acceso por ahora. Cabecera y pie van una sola vez aqui
+Sesion carrito y categorias son datos de ejemplo, todavia no hay login ni catalogo reales
+Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
+*@
+@{
+    var categoriasMenu = new (int IdCategoria, string Nombre)[]
+    {
+        (1, "Collares"),
+        (2, "Pulseras"),
+        (3, "Llaveros"),
+        (4, "Aretes"),
+    };
+    var cantidadCarrito = 0;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@Html.Raw(ViewData["Titulo"]) | LEN Accessories</title>
+    <link rel="stylesheet" href="~/lib/fonts/fonts.css">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/len.css">
+</head>
+<body class="LenPagina">
+
+    <a class="LenSalto" href="#contenido">Saltar al contenido</a>
+
+    <header class="LenCabecera">
+
+        <div class="LenCabecera-Servicio">
+            <div class="container-lg">
+                <ul>
+                    <li><a href="#">Contacto</a></li>
+                    <li><a href="/Cliente/Carrito">Carrito</a></li>
+                    <li><a href="/Cliente/MisPedidos">Mis pedidos</a></li>
+
+                    @if (!User.Identity!.IsAuthenticated)
+                    {
+                        <li data-estado="sesion-cerrada">
+                            <a asp-controller="Acceso" asp-action="IniciarSesion">Iniciar sesi&oacute;n</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li data-estado="sesion-abierta">
+                            <a href="/Cliente/MiCuenta">Hola, @User.Identity.Name</a>
+                            <form method="post" action="/Acceso/CerrarSesion">
+                                @Html.AntiForgeryToken()
+                                <button type="submit">Cerrar sesi&oacute;n</button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="container-lg LenCabecera-Barra">
+            <button class="LenAccion d-lg-none" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#MenuTienda"
+                    aria-controls="MenuTienda" aria-label="Abrir navegaci&oacute;n">
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
+
+            <a class="LenMarca" asp-controller="Home" asp-action="Index">
+                <span class="LenMarca-Nombre">LEN</span>
+                <span class="LenMarca-Sub">Accessories</span>
+            </a>
+
+            <div class="offcanvas-lg offcanvas-end" tabindex="-1" id="MenuTienda" aria-labelledby="MenuTiendaTitulo">
+                <div class="offcanvas-header">
+                    <span class="LenSubtitulo" id="MenuTiendaTitulo">LEN Accessories</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#MenuTienda" aria-label="Cerrar"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <nav aria-label="Principal">
+                        <ul class="LenMenu">
+                            <li><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                            <li><a href="/Publico/Catalogo">Cat&aacute;logo</a></li>
+
+                            @foreach (var categoria in categoriasMenu)
+                            {
+                                <li><a href="/Publico/Catalogo?idCategoria=@categoria.IdCategoria">@categoria.Nombre</a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <ul class="LenAcciones">
+                <li>
+                    <a class="LenAccion" href="/Cliente/MiCuenta" aria-label="Mi cuenta">
+                        <i class="bi bi-person" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a class="LenAccion" href="/Cliente/Favoritos" aria-label="Mis favoritos">
+                        <i class="bi bi-heart" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a class="LenAccion" href="/Cliente/Carrito" aria-label="Ver carrito">
+                        <i class="bi bi-bag" aria-hidden="true"></i>
+                        @if (cantidadCarrito > 0)
+                        {
+                            <span class="LenContador">@cantidadCarrito</span>
+                        }
+                    </a>
+                </li>
+                <li>
+                    <button class="LenAccion" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#CajaBusqueda" aria-controls="CajaBusqueda"
+                            aria-expanded="false" aria-label="Abrir b&uacute;squeda">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="collapse LenBusqueda" id="CajaBusqueda">
+            <div class="container-lg">
+                <form method="get" action="/Publico/Catalogo">
+                    <label class="LenEtiqueta" for="BusquedaGlobal">Buscar en la tienda</label>
+                    <div class="LenBusqueda-Fila">
+                        <input type="text" class="LenCampo" id="BusquedaGlobal" name="busqueda"
+                               placeholder="Buscar accesorios...">
+                        <button class="LenBoton LenBoton--Principal" type="submit">Buscar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </header>
+
+
+    <main id="contenido">
+        <div class="container-lg py-5">
+            @RenderBody()
+        </div>
+    </main>
+
+
+    <footer class="LenPie">
+        <div class="container-lg">
+            <div class="LenPie-Columnas">
+                <div>
+                    <h2 class="LenRotulo">Tienda</h2>
+                    <ul>
+                        <li><a href="/Publico/Catalogo">Cat&aacute;logo</a></li>
+                        <li><a href="/Cliente/Favoritos">Mis favoritos</a></li>
+                        <li><a href="/Cliente/Carrito">Carrito</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="LenRotulo">Mi cuenta</h2>
+                    <ul>
+                        @if (!User.Identity!.IsAuthenticated)
+                        {
+                            <li><a asp-controller="Acceso" asp-action="IniciarSesion">Iniciar sesi&oacute;n</a></li>
+                            <li><a asp-controller="Acceso" asp-action="Registro">Crear cuenta</a></li>
+                        }
+                        else
+                        {
+                            <li><a href="/Cliente/MiCuenta">Mis datos</a></li>
+                        }
+                        <li><a href="/Cliente/MisPedidos">Mis pedidos</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="LenRotulo">Contacto</h2>
+                    <p class="LenPie-Texto">
+                        Tienda en l&iacute;nea<br>
+                        LEN Accessories, Costa Rica<br>
+                        <a href="#">@@lenaccessories.cr</a>
+                    </p>
+                </div>
+            </div>
+
+            <p class="LenPie-Legal">&copy; @DateTime.Now.Year LEN Accessories. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

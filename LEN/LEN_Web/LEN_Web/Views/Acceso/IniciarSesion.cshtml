@@ -1,0 +1,75 @@
+@*
+IniciarSesion, origen Frontend_Plantilla/Acceso/IniciarSesion.html. Layout _LayoutPublico. Publica
+Formulario: POST a /Acceso/IniciarSesion con antifalsificacion. Correo y Contrasena obligatorios
+Todavia no hay accion POST en AccesoController, falta conectar el login contra LEN_API
+*@
+@model LEN_Web.Models.LoginViewModel
+@{
+    ViewData["Titulo"] = "Iniciar sesi&oacute;n";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+
+        <div class="mb-4">
+            <h1 class="LenTitular">Iniciar sesi&oacute;n</h1>
+            <p class="LenTexto LenTexto--Guia mt-2 mb-0">Ingrese sus datos para acceder a su cuenta LEN.</p>
+        </div>
+
+        @if (TempData["MensajeExito"] is string mensajeExito)
+        {
+            <div class="LenAviso LenAviso--Exito alert fade show mb-4" role="status">
+                <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-check-circle"></i></span>
+                <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">@mensajeExito</p></div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        }
+
+        <form method="post" action="/Acceso/IniciarSesion" novalidate>
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="LenAviso LenAviso--Error mb-4" role="alert">
+                    <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-x-circle"></i></span>
+                    <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">El correo o la contrase&ntilde;a no son correctos.</p></div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="LenEtiqueta" asp-for="Correo">Correo electr&oacute;nico</label>
+                <input asp-for="Correo" class="LenCampo" autocomplete="email" placeholder="correo@ejemplo.com" required>
+                <span asp-validation-for="Correo" class="LenError"></span>
+            </div>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-baseline">
+                    <label class="LenEtiqueta" asp-for="Contrasena">Contrase&ntilde;a</label>
+                    <a class="LenEnlace LenPequeno" asp-controller="Acceso" asp-action="RecuperarContrasena">&iquest;Olvid&oacute; su contrase&ntilde;a?</a>
+                </div>
+                <div class="LenCampoGrupo">
+                    <input asp-for="Contrasena" class="LenCampo" autocomplete="current-password" required>
+                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono" aria-label="Mostrar u ocultar contrase&ntilde;a">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Contrasena" class="LenError"></span>
+            </div>
+
+            <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">Iniciar sesi&oacute;n</button>
+        </form>
+
+        <p class="mt-4 mb-0">
+            &iquest;No tiene una cuenta?
+            <a class="LenEnlace" asp-controller="Acceso" asp-action="Registro">Reg&iacute;strese</a>
+        </p>
+
+        @* Pendiente con el equipo TieneContrasenaTemporal y VigenciaContrasenaTemporal ya estan en TB_USUARIO
+           Falta la pantalla de cambio obligatorio de contrasena *@
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

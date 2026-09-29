@@ -1,0 +1,208 @@
+@*
+Portada, origen Frontend_Plantilla/Publico/Portada.html. Layout _LayoutPublico. Publica sin sesion
+Datos de Model: PortadaViewModel, ejemplo mientras no existen SP_Producto_ListarDestacados y SP_Catalogo_Listar
+Las colecciones de la seccion 4 estan fijas, no salen de la base
+*@
+@model LEN_Web.Models.PortadaViewModel
+@using LEN_Web.Utilidades
+@{
+    ViewData["Titulo"] = "Portada";
+}
+
+<section class="LenSeccion">
+    <div class="container-lg">
+        <h1 class="LenSoloLectores">LEN Accessories, charms y accesorios para bolso</h1>
+
+        <div class="row align-items-center g-4 g-lg-5 LenEntrada">
+            <div class="col-lg-6">
+                <p class="LenEditorial">Charms y accesorios para bolso, hechos para acompa&ntilde;arte.</p>
+                <p class="LenTexto LenTexto--Guia mt-3">Env&iacute;os a todo Costa Rica.</p>
+                <a class="LenBoton LenBoton--Principal mt-2" href="/Publico/Catalogo">
+                    Ver cat&aacute;logo <span class="LenBoton-Flecha" aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+            <div class="col-lg-6">
+                @if (ViewData["ImagenMarca"] is string imagenMarca)
+                {
+                    <div class="LenMarcador">
+                        <img src="~/imagenes/@imagenMarca" alt="Charms y accesorios LEN Accessories">
+                    </div>
+                }
+                else
+                {
+                    <div class="LenMarcador">Imagen de marca</div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+
+@if (Model.Destacados.Any())
+{
+    <section class="LenSeccion LenSeccion--Alterna">
+        <div class="container-lg">
+
+            <div id="CarruselDestacados" class="carousel slide" data-bs-ride="carousel"
+                 aria-roledescription="carousel" aria-label="Productos destacados">
+                <div class="carousel-inner">
+
+                    @for (var i = 0; i < Model.Destacados.Count; i++)
+                    {
+                        var destacado = Model.Destacados[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <div class="row g-0 align-items-center">
+                                <div class="col-md-7">
+                                    <div class="LenMarcador LenMarcador--Horizontal">
+                                        @if (destacado.RutaImagen is not null)
+                                        {
+                                            <img src="~/imagenes/@destacado.RutaImagen" alt="@destacado.NombreProducto">
+                                        }
+                                        else
+                                        {
+                                            @:Imagen del producto destacado
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-5 LenDestacado-Texto">
+                                    <span class="LenRotulo">@destacado.NombreCategoria</span>
+                                    <h2 class="LenTitular mt-2">@destacado.NombreProducto</h2>
+                                    <p class="LenPrecio LenPrecio--Grande mt-2">@FormatoMoneda.Colones(destacado.Precio)</p>
+                                    <a class="LenBoton LenBoton--Secundario" href="/Publico/ProductoDetalle?idProducto=@destacado.IdProducto">Ver producto</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="LenDestacados-Controles">
+                    <button class="LenBoton LenBoton--Secundario LenBoton--Icono" type="button"
+                            data-bs-target="#CarruselDestacados" data-bs-slide="prev">
+                        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                        <span class="LenSoloLectores">Producto anterior</span>
+                    </button>
+                    <button class="LenBoton LenBoton--Secundario LenBoton--Icono" type="button"
+                            data-bs-target="#CarruselDestacados" data-bs-slide="next">
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        <span class="LenSoloLectores">Producto siguiente</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+
+<section class="LenSeccion">
+    <div class="container-lg">
+
+        <div class="LenAviso LenAviso--Exito mb-4" role="status" hidden>
+            <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-check-circle"></i></span>
+            <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">El producto fue agregado al carrito.</p></div>
+        </div>
+
+        <div class="LenSeccion-Encabezado">
+            <div>
+                <h2 class="LenTitular LenSeccion-Titulo">Nuestros accesorios</h2>
+                <p class="LenTexto LenTexto--Guia mb-0">Piezas hechas a mano para tu bolso, tu llavero y tu d&iacute;a a d&iacute;a.</p>
+            </div>
+            <a class="LenEnlace LenEnlace--Editorial" href="/Publico/Catalogo">Ver todo</a>
+        </div>
+
+        @if (Model.Productos.Any())
+        {
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+
+                @foreach (var producto in Model.Productos)
+                {
+                    <div class="col">
+                        <article class="LenProducto @(producto.Disponible ? "" : "LenProducto--Agotado")">
+                            <a class="LenProducto-Imagen" href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto" tabindex="-1" aria-hidden="true">
+                                @if (!producto.Disponible)
+                                {
+                                    <span class="LenProducto-Cinta"><span class="LenBadge LenBadge--Negativo">Agotado</span></span>
+                                }
+                                @if (producto.RutaImagen is not null)
+                                {
+                                    <img src="~/imagenes/@producto.RutaImagen" alt="@producto.NombreProducto">
+                                }
+                                else
+                                {
+                                    <span class="LenProducto-SinImagen">
+                                        <i class="bi bi-image" aria-hidden="true"></i>
+                                        Imagen del producto
+                                    </span>
+                                }
+                            </a>
+                            <div>
+                                <span class="LenProducto-Meta">@producto.NombreCategoria</span>
+                                <h3 class="LenProducto-Nombre"><a href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto">@producto.NombreProducto</a></h3>
+                                <span class="LenPrecio">@FormatoMoneda.Colones(producto.Precio)</span>
+                                <div class="LenProducto-Acciones">
+                                    @if (producto.Disponible)
+                                    {
+                                        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno" data-idproducto="@producto.IdProducto">
+                                            <i class="bi bi-bag-plus" aria-hidden="true"></i> Agregar
+                                        </button>
+                                    }
+                                    <a class="LenBoton LenBoton--Texto LenBoton--Pequeno" href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto">Ver</a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="LenVacio mt-4">
+                <p class="LenVacio-Titulo">No hay productos disponibles por el momento.</p>
+                <p class="LenVacio-Texto">Vuelva pronto para descubrir nuestros accesorios.</p>
+            </div>
+        }
+    </div>
+</section>
+
+
+<section class="LenSeccion pt-0">
+    <div class="container-lg">
+        <div class="row g-4">
+            <div class="col-md-7">
+                <article class="LenColeccion">
+                    <a class="LenColeccion-Imagen" href="/Publico/Catalogo" tabindex="-1" aria-hidden="true">
+                        @if (ViewData["ImagenColeccionCharms"] is string imagenCharms)
+                        {
+                            <div class="LenMarcador LenMarcador--Apaisado">
+                                <img src="~/imagenes/@imagenCharms" alt="Colecci&oacute;n Charms para bolso">
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="LenMarcador LenMarcador--Apaisado">Imagen de la colecci&oacute;n</div>
+                        }
+                    </a>
+                    <h3 class="LenColeccion-Titulo"><a href="/Publico/Catalogo">Charms para bolso</a></h3>
+                    <a class="LenEnlace LenEnlace--Editorial LenPequeno" href="/Publico/Catalogo">Ver cat&aacute;logo</a>
+                </article>
+            </div>
+            <div class="col-md-5">
+                <article class="LenColeccion">
+                    <a class="LenColeccion-Imagen" href="/Publico/Catalogo" tabindex="-1" aria-hidden="true">
+                        @if (ViewData["ImagenColeccionLen"] is string imagenLen)
+                        {
+                            <div class="LenMarcador">
+                                <img src="~/imagenes/@imagenLen" alt="Colecci&oacute;n LEN">
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="LenMarcador">Imagen de la colecci&oacute;n</div>
+                        }
+                    </a>
+                    <h3 class="LenColeccion-Titulo"><a href="/Publico/Catalogo">Colecci&oacute;n LEN</a></h3>
+                    <a class="LenEnlace LenEnlace--Editorial LenPequeno" href="/Publico/Catalogo">Ver cat&aacute;logo</a>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>

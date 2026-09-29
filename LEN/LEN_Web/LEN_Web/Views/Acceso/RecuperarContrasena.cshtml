@@ -1,0 +1,58 @@
+@*
+RecuperarContrasena, origen Frontend_Plantilla/Acceso/RecuperarContrasena.html. Layout _LayoutPublico. Publica
+Formulario: POST a /Acceso/RecuperarContrasena con antifalsificacion. Solo Correo
+Todavia no hay accion POST, falta conectar SP_Usuario_AsignarContrasenaTemporal desde LEN_API
+*@
+@model LEN_Web.Models.RecuperarContrasenaViewModel
+@{
+    ViewData["Titulo"] = "Recuperar contrase&ntilde;a";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+
+        <div class="mb-4">
+            <h1 class="LenTitular">Recuperar contrase&ntilde;a</h1>
+            <p class="LenTexto LenTexto--Guia mt-2 mb-0">Ingrese el correo electr&oacute;nico asociado a su cuenta.</p>
+        </div>
+
+        <form method="post" action="/Acceso/RecuperarContrasena" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="mb-4">
+                <label class="LenEtiqueta" asp-for="Correo">Correo electr&oacute;nico</label>
+                <input asp-for="Correo" class="LenCampo" autocomplete="email" placeholder="correo@ejemplo.com" required>
+                <span asp-validation-for="Correo" class="LenError"></span>
+            </div>
+
+            <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">Enviar instrucciones</button>
+        </form>
+
+        <p class="LenAyuda mt-3">
+            Revise la bandeja de entrada y la carpeta de correo no deseado.
+        </p>
+
+        @if (TempData["MensajeEnviado"] is not null)
+        {
+            <div class="LenAviso LenAviso--Info mt-4" role="status">
+                <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-info-circle"></i></span>
+                <div class="LenAviso-Cuerpo">
+                    <p class="LenAviso-Titulo mb-0">
+                        Si el correo est&aacute; registrado, en unos minutos va a recibir un
+                        mensaje con las instrucciones para recuperar el acceso.
+                    </p>
+                </div>
+            </div>
+        }
+
+        <p class="mt-4 mb-0">
+            &iquest;Record&oacute; su contrase&ntilde;a?
+            <a class="LenEnlace" asp-controller="Acceso" asp-action="IniciarSesion">Volver al inicio de sesi&oacute;n</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

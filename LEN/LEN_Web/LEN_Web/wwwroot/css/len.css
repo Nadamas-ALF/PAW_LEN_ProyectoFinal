@@ -1,0 +1,2190 @@
+/* LEN Accessories hoja de estilos unica
+   Cargar despues de Bootstrap
+   Crema y Coral son alias de Neutro y Frambuesa para las vistas viejas */
+
+:root {
+    /* Paleta */
+    --Len-Neutro: #FAF9F6;
+    --Len-Crema: var(--Len-Neutro);
+    --Len-Tinta: #29272B;
+    --Len-Frambuesa: #DF4661;
+    --Len-Coral: var(--Len-Frambuesa);
+    --Len-Verde: #BFD36B;
+    --Len-Lila: #B69ACF;
+
+    /* Frambuesa oscura para botones y enlaces con texto */
+    --Len-Accion: #B92E4A;
+    --Len-Exito: #556E1E;
+    --Len-Aviso: #875F0D;
+    --Len-Peligro: #8E2B22;
+
+    /* Superficies */
+    --Len-Fondo: #FAF9F6;
+    --Len-Superficie: #FFFFFF;
+    --Len-Superficie-Alterna: #F1F0EC;
+
+    /* Texto */
+    --Len-Texto: #29272B;
+    --Len-Texto-Suave: #68656B;
+    --Len-Texto-Invertido: #FFFFFF;
+
+    /* Bordes. El de campo es mas oscuro para llegar a 3:1 */
+    --Len-Borde: rgba(41, 39, 43, .14);
+    --Len-Borde-Marcado: rgba(41, 39, 43, .24);
+    --Len-Borde-Campo: #88848A;
+
+    /* Fondos suaves de estado con texto Tinta encima */
+    --Len-Exito-Suave: #EDF2DF;
+    --Len-Aviso-Suave: #F7EEDB;
+    --Len-Peligro-Suave: #F9E7E6;
+    --Len-Marca-Suave: #FBE9EE;
+
+    /* Espaciado */
+    --Len-Espacio-0: .25rem;
+    --Len-Espacio-1: .5rem;
+    --Len-Espacio-2: 1rem;
+    --Len-Espacio-3: 1.5rem;
+    --Len-Espacio-4: 2.5rem;
+    --Len-Espacio-5: 4rem;
+    --Len-Espacio-6: 6rem;
+
+    /* Radios. Producto y editorial casi rectos */
+    --Len-Radio-Producto: .125rem;
+    --Len-Radio-Pequeno: .2rem;
+    --Len-Radio-Medio: .4rem;
+    --Len-Radio-Pill: 999px;
+
+    /* Tipografia */
+    --Len-Display: "Instrument Serif", Georgia, serif;
+    --Len-Sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Sombras solo en capas que flotan */
+    --Len-Sombra: 0 1px 2px rgba(41, 39, 43, .05), 0 6px 18px rgba(41, 39, 43, .07);
+    --Len-Sombra-Flotante: 0 2px 6px rgba(41, 39, 43, .08), 0 18px 40px rgba(41, 39, 43, .12);
+
+    --Len-Transicion-Rapida: 180ms;
+    --Len-Transicion-Normal: 320ms;
+    --Len-Transicion-Editorial: 520ms;
+
+    --Len-Z-Header: 1020;
+    --Len-Z-Flotante: 1050;
+}
+
+
+/* ----------------------------------------------------------------
+   Base
+   ---------------------------------------------------------------- */
+
+body {
+    background-color: var(--Len-Fondo);
+    color: var(--Len-Texto);
+    font-family: var(--Len-Sans);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--Len-Texto);
+    font-family: var(--Len-Sans);
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+/* Sans para todo. Serif solo con LenEditorial */
+.LenDisplay {
+    font-family: var(--Len-Sans);
+    font-size: clamp(2.75rem, 6vw, 5.5rem);
+    font-weight: 500;
+    letter-spacing: -.065em;
+    line-height: 1.02;
+}
+.LenTitular {
+    font-family: var(--Len-Sans);
+    font-size: clamp(1.75rem, 3.2vw, 2.6rem);
+    font-weight: 500;
+    letter-spacing: -.045em;
+    line-height: 1.1;
+}
+.LenSubtitulo {
+    font-family: var(--Len-Sans);
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    font-weight: 600;
+    line-height: 1.3;
+}
+.LenEditorial {
+    font-family: var(--Len-Display);
+    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-weight: 400;
+    letter-spacing: -.025em;
+    line-height: 1.05;
+}
+
+/* Parrafo largo siempre en sans */
+.LenTexto {
+    font-family: var(--Len-Sans);
+    font-size: 1rem;
+    max-width: 62ch;
+}
+
+.LenTexto--Guia {
+    color: var(--Len-Texto-Suave);
+    font-size: 1.05rem;
+}
+
+.LenPequeno {
+    font-size: .875rem;
+}
+
+/* Rotulo chico sobre el titulo */
+.LenRotulo {
+    color: var(--Len-Texto-Suave);
+    display: block;
+    font-family: var(--Len-Sans);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.LenPrecio {
+    font-family: var(--Len-Sans);
+    font-feature-settings: "tnum" 1;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.LenPrecio--Grande {
+    font-size: 1.5rem;
+}
+
+.LenPrecio-Antes {
+    color: var(--Len-Texto-Suave);
+    font-weight: 400;
+    margin-right: var(--Len-Espacio-1);
+    text-decoration: line-through;
+}
+
+
+/* ----------------------------------------------------------------
+   Foco unico para todo
+   ---------------------------------------------------------------- */
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--Len-Accion);
+    outline-offset: 2px;
+}
+
+
+/* ----------------------------------------------------------------
+   Enlaces
+   ---------------------------------------------------------------- */
+
+.LenEnlace {
+    color: var(--Len-Accion);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: .18em;
+}
+
+.LenEnlace:hover {
+    text-decoration-thickness: 2px;
+}
+
+/* Subrayado recto */
+.LenEnlace--Editorial {
+    color: var(--Len-Texto);
+    text-decoration: underline;
+    text-decoration-color: var(--Len-Accion);
+    text-underline-offset: .25em;
+    text-decoration-thickness: 1px;
+}
+.LenEnlace--Editorial:hover { color: var(--Len-Accion); }
+
+.LenEnlace--Nav {
+    color: var(--Len-Texto);
+    font-size: .95rem;
+    text-decoration: none;
+}
+
+.LenEnlace--Nav:hover,
+.LenEnlace--Nav[aria-current="page"] {
+    color: var(--Len-Accion);
+}
+
+
+/* ----------------------------------------------------------------
+   Botones
+   ---------------------------------------------------------------- */
+
+.LenBoton {
+    align-items: center;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--Len-Radio-Pequeno);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--Len-Sans);
+    font-size: .95rem;
+    font-weight: 600;
+    gap: var(--Len-Espacio-1);
+    justify-content: center;
+    line-height: 1.2;
+    /* 44px minimo para tocar con el dedo */
+    min-height: 2.75rem;
+    padding: .65rem 1.35rem;
+    text-decoration: none;
+    transition: background-color var(--Len-Transicion-Rapida) ease,
+                border-color var(--Len-Transicion-Rapida) ease,
+                color var(--Len-Transicion-Rapida) ease;
+}
+
+.LenBoton--Principal {
+    background-color: var(--Len-Accion);
+    border-color: var(--Len-Accion);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Principal:hover {
+    background-color: #9F243D;
+    border-color: #9F243D;
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Marca {
+    background-color: var(--Len-Accion);
+    border-color: var(--Len-Accion);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Marca:hover {
+    background-color: var(--Len-Tinta);
+    border-color: var(--Len-Tinta);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Secundario {
+    background-color: transparent;
+    border-color: var(--Len-Borde-Marcado);
+    color: var(--Len-Texto);
+}
+
+.LenBoton--Secundario:hover {
+    background-color: var(--Len-Tinta);
+    border-color: var(--Len-Tinta);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Texto {
+    color: var(--Len-Accion);
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.LenBoton--Texto:hover {
+    color: var(--Len-Tinta);
+    text-decoration: underline;
+}
+
+.LenBoton--Peligro {
+    background-color: var(--Len-Peligro);
+    border-color: var(--Len-Peligro);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Peligro:hover {
+    background-color: #741F18;
+    border-color: #741F18;
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenBoton--Icono {
+    min-width: 2.75rem;
+    padding: .65rem;
+}
+
+.LenBoton--Pequeno {
+    font-size: .85rem;
+    min-height: 2.75rem;
+    padding: .4rem .9rem;
+}
+
+.LenBoton--Bloque {
+    width: 100%;
+}
+
+.LenBoton:disabled,
+.LenBoton[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+/* Unico movimiento del boton */
+.LenBoton-Flecha {
+    transition: transform var(--Len-Transicion-Rapida) ease;
+}
+
+.LenBoton:hover .LenBoton-Flecha {
+    transform: translateX(3px);
+}
+
+
+/* ----------------------------------------------------------------
+   Formularios
+   ---------------------------------------------------------------- */
+
+.LenEtiqueta {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    margin-bottom: var(--Len-Espacio-0);
+}
+
+.LenEtiqueta-Obligatorio {
+    color: var(--Len-Accion);
+    margin-left: .15rem;
+}
+
+.LenCampo {
+    background-color: var(--Len-Superficie);
+    border: 1px solid var(--Len-Borde-Campo);
+    border-radius: var(--Len-Radio-Pequeno);
+    color: var(--Len-Texto);
+    font-family: var(--Len-Sans);
+    font-size: 1rem;
+    min-height: 2.75rem;
+    padding: .6rem .8rem;
+    transition: border-color var(--Len-Transicion-Rapida) ease;
+    width: 100%;
+}
+
+.LenCampo::placeholder {
+    color: var(--Len-Texto-Suave);
+}
+
+.LenCampo:hover {
+    border-color: var(--Len-Tinta);
+}
+
+.LenCampo:focus {
+    border-color: var(--Len-Tinta);
+    outline: 2px solid var(--Len-Accion);
+    outline-offset: 1px;
+}
+
+.LenCampo[aria-invalid="true"] {
+    background-color: var(--Len-Peligro-Suave);
+    border-color: var(--Len-Peligro);
+}
+
+.LenCampo:disabled,
+.LenCampo[readonly] {
+    background-color: #EEEDEA;
+    color: var(--Len-Texto-Suave);
+    cursor: not-allowed;
+}
+
+.LenCampo[readonly] {
+    cursor: default;
+}
+
+textarea.LenCampo {
+    line-height: 1.5;
+    min-height: 7rem;
+    resize: vertical;
+}
+
+select.LenCampo {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2329272B' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-position: right .9rem center;
+    background-repeat: no-repeat;
+    padding-right: 2.4rem;
+}
+
+.LenCampo--Corto {
+    width: 6.5rem;
+}
+
+/* Campo con un boton pegado al lado. Ejemplo mostrar contrasena */
+.LenCampoGrupo {
+    display: flex;
+}
+
+.LenCampoGrupo .LenCampo {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.LenCampoGrupo .LenBoton {
+    border-bottom-left-radius: 0;
+    border-color: var(--Len-Borde-Campo);
+    border-top-left-radius: 0;
+    margin-left: -1px;
+}
+
+.LenEtiqueta-Opcional {
+    color: var(--Len-Texto-Suave);
+    font-weight: 400;
+}
+
+.LenAyuda {
+    color: var(--Len-Texto-Suave);
+    display: block;
+    font-size: .8rem;
+    margin-top: var(--Len-Espacio-0);
+}
+
+/* El error lleva simbolo ademas del color */
+.LenError {
+    color: var(--Len-Peligro);
+    display: block;
+    font-size: .8rem;
+    font-weight: 500;
+    margin-top: var(--Len-Espacio-0);
+}
+
+.LenError::before {
+    content: "! ";
+    font-weight: 700;
+}
+
+/* asp-validation-for deja el span vacio cuando el campo todavia es valido */
+.LenError.field-validation-valid {
+    display: none;
+}
+
+.LenOpcion {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--Len-Espacio-1);
+    margin-bottom: var(--Len-Espacio-1);
+}
+
+.LenOpcion input {
+    accent-color: var(--Len-Accion);
+    flex-shrink: 0;
+    height: 1.15rem;
+    margin-top: .18rem;
+    width: 1.15rem;
+}
+
+.LenOpcion label {
+    font-size: .95rem;
+}
+
+
+/* ----------------------------------------------------------------
+   Etiquetas de estado
+   ---------------------------------------------------------------- */
+
+.LenBadge {
+    background-color: transparent;
+    border: 1px solid var(--Len-Borde-Marcado);
+    border-radius: var(--Len-Radio-Pill);
+    color: var(--Len-Texto);
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    line-height: 1.4;
+    padding: .2rem .7rem;
+    white-space: nowrap;
+}
+
+/* Las clases estado-pedido-* son las que guarda TB_ESTADO_PEDIDO.ClaseCss */
+.LenBadge--Exito,
+.estado-pedido-pagado,
+.estado-pedido-entregado {
+    background-color: var(--Len-Exito-Suave);
+    border-color: var(--Len-Exito);
+}
+
+.LenBadge--Proceso,
+.estado-pedido-preparacion {
+    background-color: var(--Len-Aviso-Suave);
+    border-color: var(--Len-Aviso);
+}
+
+.LenBadge--Negativo,
+.estado-pedido-cancelado {
+    background-color: var(--Len-Peligro-Suave);
+    border-color: var(--Len-Peligro);
+}
+
+.LenBadge--Marca {
+    background-color: var(--Len-Marca-Suave);
+    border-color: var(--Len-Accion);
+}
+
+.LenBadge--Neutro {
+    background-color: transparent;
+    border-color: var(--Len-Borde-Marcado);
+    color: var(--Len-Texto-Suave);
+}
+
+
+/* ----------------------------------------------------------------
+   Avisos
+   ---------------------------------------------------------------- */
+
+.LenAviso {
+    align-items: flex-start;
+    border: 1px solid var(--Len-Borde-Marcado);
+    border-left-width: 3px;
+    border-radius: var(--Len-Radio-Pequeno);
+    display: flex;
+    gap: var(--Len-Espacio-2);
+    padding: var(--Len-Espacio-2);
+}
+
+.LenAviso-Icono {
+    flex-shrink: 0;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.LenAviso-Cuerpo {
+    flex-grow: 1;
+}
+
+.LenAviso-Titulo {
+    font-family: var(--Len-Sans);
+    font-size: .95rem;
+    font-weight: 700;
+    margin-bottom: .1rem;
+}
+
+.LenAviso--Exito {
+    background-color: var(--Len-Exito-Suave);
+    border-color: var(--Len-Exito);
+}
+
+.LenAviso--Aviso {
+    background-color: var(--Len-Aviso-Suave);
+    border-color: var(--Len-Aviso);
+}
+
+.LenAviso--Error {
+    background-color: var(--Len-Peligro-Suave);
+    border-color: var(--Len-Peligro);
+}
+
+.LenAviso--Info {
+    background-color: var(--Len-Superficie);
+    border-color: var(--Len-Borde-Marcado);
+}
+
+
+/* ----------------------------------------------------------------
+   Tarjeta de producto
+   Sin caja ni sombra. La foto manda
+   ---------------------------------------------------------------- */
+
+.LenProducto {
+    display: flex;
+    flex-direction: column;
+    gap: var(--Len-Espacio-1);
+    position: relative;
+}
+
+/* Enlace que solo lleva foto. Se apaga color y subrayado */
+.LenProducto-Imagen {
+    aspect-ratio: 4 / 5;
+    background-color: var(--Len-Superficie);
+    border-radius: var(--Len-Radio-Producto);
+    color: inherit;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    text-decoration: none;
+}
+
+.LenProducto-Imagen img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--Len-Transicion-Normal) ease;
+    width: 100%;
+}
+
+.LenProducto:hover .LenProducto-Imagen img {
+    transform: scale(1.03);
+}
+
+/* Producto sin foto cargada */
+.LenProducto-SinImagen {
+    align-items: center;
+    background-color: #EEEDEA;
+    color: var(--Len-Texto-Suave);
+    display: flex;
+    flex-direction: column;
+    font-size: .8rem;
+    gap: var(--Len-Espacio-0);
+    height: 100%;
+    justify-content: center;
+    text-align: center;
+}
+
+.LenProducto-Cinta {
+    left: var(--Len-Espacio-1);
+    position: absolute;
+    top: var(--Len-Espacio-1);
+    z-index: 1;
+}
+
+.LenProducto-Nombre {
+    font-family: var(--Len-Sans);
+    font-size: .95rem;
+    font-weight: 500;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.LenProducto-Nombre a {
+    color: var(--Len-Texto);
+    text-decoration: none;
+}
+
+.LenProducto-Nombre a:hover {
+    text-decoration: underline;
+    text-underline-offset: .18em;
+}
+
+.LenProducto-Meta {
+    color: var(--Len-Texto-Suave);
+    display: block;
+    font-size: .8rem;
+}
+
+/* Agregar y ver debajo del precio */
+.LenProducto-Acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-1);
+    margin-top: var(--Len-Espacio-0);
+}
+
+/* Corazon relleno cuando el producto ya es favorito */
+.LenAccion .bi-heart-fill {
+    color: var(--Len-Accion);
+}
+
+/* Corazon sobre la foto. Va en el formulario y el boton lleva LenAccion */
+.LenProducto-Favorito {
+    background-color: var(--Len-Superficie);
+    position: absolute;
+    right: var(--Len-Espacio-1);
+    top: var(--Len-Espacio-1);
+    z-index: 2;
+}
+
+/* Agotado conserva el color real y el badge lo indica */
+.LenProducto--Agotado .LenProducto-Imagen img {
+    opacity: 1;
+}
+
+
+/* ----------------------------------------------------------------
+   Secciones editoriales
+   ---------------------------------------------------------------- */
+
+.LenSeccion {
+    padding-block: var(--Len-Espacio-5);
+}
+
+.LenSeccion--Alterna {
+    background-color: var(--Len-Superficie-Alterna);
+}
+
+.LenSeccion--Tinta {
+    background-color: var(--Len-Tinta);
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenSeccion--Tinta h1,
+.LenSeccion--Tinta h2,
+.LenSeccion--Tinta h3,
+.LenSeccion--Tinta .LenRotulo {
+    color: var(--Len-Texto-Invertido);
+}
+
+.LenSeccion-Encabezado {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-2);
+    justify-content: space-between;
+    margin-bottom: var(--Len-Espacio-3);
+}
+
+.LenSeccion-Titulo {
+    margin: 0;
+}
+
+
+/* ----------------------------------------------------------------
+   Bloque vacio
+   ---------------------------------------------------------------- */
+
+.LenVacio {
+    border-top: 1px solid var(--Len-Borde);
+    border-radius: 0;
+    padding: var(--Len-Espacio-4) var(--Len-Espacio-2);
+    text-align: center;
+}
+
+.LenVacio-Titulo {
+    font-family: var(--Len-Sans);
+    font-size: 1.35rem;
+    margin-bottom: var(--Len-Espacio-0);
+}
+
+.LenVacio-Texto {
+    color: var(--Len-Texto-Suave);
+    margin-bottom: var(--Len-Espacio-2);
+    margin-inline: auto;
+    max-width: 38ch;
+}
+
+
+/* ----------------------------------------------------------------
+   Paginacion
+   ---------------------------------------------------------------- */
+
+.LenPaginacion {
+    align-items: center;
+    display: flex;
+    gap: var(--Len-Espacio-0);
+    justify-content: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenPaginacion a,
+.LenPaginacion span {
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: var(--Len-Radio-Pequeno);
+    color: var(--Len-Texto);
+    display: inline-flex;
+    justify-content: center;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding-inline: .6rem;
+    text-decoration: none;
+}
+
+.LenPaginacion a:hover {
+    border-color: var(--Len-Borde-Marcado);
+}
+
+.LenPaginacion [aria-current="page"] {
+    background-color: var(--Len-Tinta);
+    color: var(--Len-Texto-Invertido);
+    font-weight: 600;
+}
+
+.LenPaginacion [aria-disabled="true"] {
+    color: var(--Len-Texto-Suave);
+    opacity: .5;
+    pointer-events: none;
+}
+
+
+/* ----------------------------------------------------------------
+   Admin
+   Misma paleta y botones que la tienda con mas densidad
+   ---------------------------------------------------------------- */
+
+.LenPanel {
+    background-color: var(--Len-Superficie);
+    border: 1px solid var(--Len-Borde);
+    border-radius: var(--Len-Radio-Medio);
+    padding: var(--Len-Espacio-2);
+}
+
+.LenIndicador {
+    border-top: 1px solid var(--Len-Borde-Marcado);
+    display: flex;
+    flex-direction: column;
+    gap: var(--Len-Espacio-1);
+    padding: var(--Len-Espacio-2) 0;
+}
+
+.LenIndicador-Encabezado {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Fluido para que el monto no se parta en telefono */
+.LenIndicador-Valor {
+    font-family: var(--Len-Sans);
+    font-feature-settings: "tnum" 1;
+    font-size: clamp(1.3rem, 4.5vw, 1.85rem);
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.LenIndicador-Pie {
+    color: var(--Len-Texto-Suave);
+    font-size: .8rem;
+}
+
+.LenIndicador--Atencion {
+    border-color: var(--Len-Peligro);
+}
+
+/* El min-width hace que la envoltura se deslice en telefono */
+.LenTabla {
+    border-collapse: collapse;
+    min-width: 44rem;
+    width: 100%;
+}
+
+.LenTabla th {
+    border-bottom: 1px solid var(--Len-Borde-Marcado);
+    color: var(--Len-Texto-Suave);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    padding: .7rem .75rem;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.LenTabla td {
+    border-bottom: 1px solid var(--Len-Borde);
+    padding: .8rem .75rem;
+    vertical-align: middle;
+}
+
+.LenTabla tbody tr:hover {
+    background-color: var(--Len-Superficie-Alterna);
+}
+
+.LenTabla-Numero {
+    font-feature-settings: "tnum" 1;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.LenTabla-Acciones {
+    display: flex;
+    gap: var(--Len-Espacio-0);
+    justify-content: flex-end;
+}
+
+/* En telefono la tabla se desliza en vez de volverse tarjetas */
+.LenTabla-Envoltura {
+    position: relative;
+    overflow-x: auto;
+}
+
+
+/* ----------------------------------------------------------------
+   Recursos graficos de marca
+   ---------------------------------------------------------------- */
+
+.LenMarca-Grafico {
+    color: var(--Len-Coral);
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Separador recto */
+.LenLinea {
+    background: var(--Len-Borde-Marcado);
+    border: 0;
+    height: 1px;
+    margin: 0;
+    opacity: 1;
+    width: 100%;
+}
+.LenGrano { position: relative; }
+
+/* ----------------------------------------------------------------
+   Utilidades
+   ---------------------------------------------------------------- */
+
+.LenSuperficie {
+    background-color: var(--Len-Superficie);
+}
+
+.LenSombra {
+    box-shadow: var(--Len-Sombra);
+}
+
+.LenSombra--Flotante {
+    box-shadow: var(--Len-Sombra-Flotante);
+}
+
+.LenBorde {
+    border: 1px solid var(--Len-Borde);
+}
+
+/* Solo para lectores de pantalla */
+.LenSoloLectores {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+
+/* ----------------------------------------------------------------
+   Entrada editorial. Una vez por pantalla y arriba
+   ---------------------------------------------------------------- */
+
+.LenEntrada {
+    animation: LenAparecer var(--Len-Transicion-Editorial) ease both;
+}
+
+@keyframes LenAparecer {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+
+/* ----------------------------------------------------------------
+   Estructura de pagina
+   ---------------------------------------------------------------- */
+
+/* Body en columna para que el pie quede abajo */
+.LenPagina {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.LenPagina > main {
+    flex-grow: 1;
+}
+
+.LenSalto {
+    background-color: var(--Len-Superficie);
+    left: var(--Len-Espacio-2);
+    padding: .75rem 1rem;
+    position: absolute;
+    top: -6rem;
+    z-index: var(--Len-Z-Flotante);
+}
+
+.LenSalto:focus {
+    top: var(--Len-Espacio-2);
+}
+
+
+/* ----------------------------------------------------------------
+   Marca escrita
+   ---------------------------------------------------------------- */
+
+.LenMarca {
+    color: var(--Len-Texto);
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.LenMarca:hover {
+    color: var(--Len-Texto);
+}
+
+.LenMarca-Nombre {
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -.07em;
+}
+
+.LenMarca-Sub {
+    color: var(--Len-Texto-Suave);
+    font-size: .6rem;
+    font-weight: 500;
+    letter-spacing: .24em;
+    margin-top: .25rem;
+    text-transform: uppercase;
+}
+
+
+/* ----------------------------------------------------------------
+   Cabecera publica
+   Sin z-index para que el fondo del offcanvas no tape el menu
+   ---------------------------------------------------------------- */
+
+.LenCabecera {
+    background-color: var(--Len-Fondo);
+    border-bottom: 1px solid var(--Len-Borde);
+    position: relative;
+}
+
+.LenCabecera-Servicio {
+    border-bottom: 1px solid var(--Len-Borde);
+    font-size: .8rem;
+}
+
+.LenCabecera-Servicio ul {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--Len-Espacio-3);
+    justify-content: flex-end;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenCabecera-Servicio a,
+.LenCabecera-Servicio button {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--Len-Texto);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    min-height: 2rem;
+    padding: 0;
+    text-decoration: none;
+}
+
+.LenCabecera-Servicio a:hover,
+.LenCabecera-Servicio button:hover {
+    color: var(--Len-Accion);
+    text-decoration: underline;
+}
+
+.LenCabecera-Servicio li {
+    align-items: center;
+    display: flex;
+    gap: var(--Len-Espacio-2);
+}
+
+.LenCabecera-Servicio form {
+    margin: 0;
+}
+
+.LenCabecera-Barra {
+    align-items: center;
+    display: flex;
+    gap: var(--Len-Espacio-2);
+    min-height: 4.5rem;
+}
+
+.LenCabecera .offcanvas-lg {
+    --bs-offcanvas-bg: var(--Len-Fondo);
+    --bs-offcanvas-border-color: var(--Len-Borde);
+    --bs-offcanvas-box-shadow: var(--Len-Sombra-Flotante);
+    --bs-offcanvas-width: 19rem;
+}
+
+.LenAcciones {
+    align-items: center;
+    display: flex;
+    list-style: none;
+    margin: 0 0 0 auto;
+    padding: 0;
+}
+
+/* Icono de accion con area de toque de 44px */
+.LenAccion {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: var(--Len-Radio-Pequeno);
+    color: var(--Len-Texto);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 1.25rem;
+    height: 2.75rem;
+    justify-content: center;
+    position: relative;
+    text-decoration: none;
+    transition: color var(--Len-Transicion-Rapida) ease;
+    width: 2.75rem;
+}
+
+.LenAccion:hover {
+    color: var(--Len-Accion);
+}
+
+.LenAccion:disabled {
+    color: var(--Len-Texto);
+    cursor: not-allowed;
+    opacity: .4;
+}
+
+/* Globito del carrito. Con hidden cuando es cero */
+.LenContador {
+    align-items: center;
+    background-color: var(--Len-Accion);
+    border-radius: var(--Len-Radio-Pill);
+    color: var(--Len-Texto-Invertido);
+    display: flex;
+    font-size: .65rem;
+    font-weight: 700;
+    height: 1.15rem;
+    justify-content: center;
+    min-width: 1.15rem;
+    padding-inline: .25rem;
+    position: absolute;
+    right: .1rem;
+    top: .2rem;
+}
+
+.LenMenu {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.LenMenu a {
+    align-items: center;
+    color: var(--Len-Texto);
+    display: flex;
+    font-size: 1.1rem;
+    min-height: 2.75rem;
+    text-decoration: none;
+}
+
+.LenMenu a:hover,
+.LenMenu a[aria-current="page"] {
+    color: var(--Len-Accion);
+}
+
+.LenMenu a[aria-current="page"] {
+    font-weight: 600;
+}
+
+.LenMenu--Fila {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-3);
+    width: auto;
+}
+
+@media (min-width: 992px) {
+    .LenCabecera .offcanvas-lg {
+        flex-grow: 1;
+    }
+
+    .LenCabecera .offcanvas-body {
+        justify-content: center;
+    }
+
+    .LenMenu {
+        flex-direction: row;
+        gap: var(--Len-Espacio-3);
+        width: auto;
+    }
+
+    .LenMenu a {
+        font-size: .95rem;
+    }
+
+    .LenMenu a[aria-current="page"] {
+        box-shadow: inset 0 -2px 0 var(--Len-Accion);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .LenCabecera-Servicio a,
+    .LenCabecera-Servicio button {
+        min-height: 2.75rem;
+    }
+}
+
+.LenBusqueda {
+    background-color: var(--Len-Superficie-Alterna);
+    border-top: 1px solid var(--Len-Borde);
+    padding-block: var(--Len-Espacio-3);
+}
+
+.LenBusqueda-Fila {
+    display: flex;
+    gap: var(--Len-Espacio-1);
+}
+
+.LenBusqueda-Fila .LenCampo {
+    flex-grow: 1;
+}
+
+
+/* ----------------------------------------------------------------
+   Pie publico
+   ---------------------------------------------------------------- */
+
+.LenPie {
+    background-color: var(--Len-Superficie-Alterna);
+    border-top: 1px solid var(--Len-Borde);
+    padding-block: var(--Len-Espacio-4) var(--Len-Espacio-3);
+}
+
+.LenPie-Columnas {
+    display: grid;
+    gap: var(--Len-Espacio-3);
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.LenPie ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenPie .LenRotulo {
+    margin-bottom: var(--Len-Espacio-1);
+}
+
+.LenPie a {
+    align-items: center;
+    color: var(--Len-Texto);
+    display: inline-flex;
+    min-height: 2.75rem;
+    text-decoration: none;
+}
+
+.LenPie a:hover {
+    color: var(--Len-Accion);
+    text-decoration: underline;
+}
+
+.LenPie-Texto {
+    color: var(--Len-Texto-Suave);
+    font-size: .95rem;
+    margin: 0;
+}
+
+.LenPie-Legal {
+    border-top: 1px solid var(--Len-Borde);
+    color: var(--Len-Texto-Suave);
+    font-size: .8rem;
+    margin: var(--Len-Espacio-3) 0 0;
+    padding-top: var(--Len-Espacio-2);
+}
+
+
+/* ----------------------------------------------------------------
+   Panel administrativo
+   Barra lateral offcanvas en angosto y fija en ancho
+   ---------------------------------------------------------------- */
+
+.LenAdmin {
+    display: flex;
+    min-height: 100vh;
+}
+
+.LenAdmin-Menu {
+    --bs-offcanvas-bg: var(--Len-Superficie-Alterna);
+    --bs-offcanvas-border-color: var(--Len-Borde);
+    --bs-offcanvas-box-shadow: var(--Len-Sombra-Flotante);
+    --bs-offcanvas-width: 17rem;
+}
+
+.LenAdmin-Lateral {
+    background-color: var(--Len-Superficie-Alterna);
+    border-right: 1px solid var(--Len-Borde);
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+@media (min-width: 992px) {
+    .LenAdmin-Menu {
+        flex: 0 0 15.5rem;
+    }
+
+    .LenAdmin-Lateral {
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+}
+
+.LenAdmin-Marca {
+    border-bottom: 1px solid var(--Len-Borde);
+    padding: 1.1rem 1rem;
+}
+
+.LenAdmin-Nav {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: var(--Len-Espacio-1) 0;
+}
+
+.LenAdmin-Nav a {
+    align-items: center;
+    color: var(--Len-Texto);
+    display: flex;
+    gap: .75rem;
+    min-height: 2.75rem;
+    padding: .35rem 1rem;
+    text-decoration: none;
+}
+
+.LenAdmin-Nav a:hover {
+    background-color: rgba(41, 39, 43, .05);
+}
+
+.LenAdmin-Nav a[aria-current="page"] {
+    background-color: var(--Len-Marca-Suave);
+    box-shadow: inset 3px 0 0 var(--Len-Accion);
+    font-weight: 600;
+}
+
+.LenAdmin-Usuario {
+    align-items: center;
+    border-top: 1px solid var(--Len-Borde);
+    color: var(--Len-Texto);
+    display: flex;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    text-decoration: none;
+}
+
+.LenAdmin-Usuario small {
+    color: var(--Len-Texto-Suave);
+    display: block;
+}
+
+.LenAvatar {
+    align-items: center;
+    background-color: var(--Len-Accion);
+    border-radius: 50%;
+    color: var(--Len-Texto-Invertido);
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: .8rem;
+    font-weight: 700;
+    height: 2.25rem;
+    justify-content: center;
+    width: 2.25rem;
+}
+
+.LenAdmin-Principal {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.LenAdmin-Barra {
+    align-items: center;
+    background-color: var(--Len-Superficie);
+    border-bottom: 1px solid var(--Len-Borde);
+    display: flex;
+    gap: var(--Len-Espacio-1);
+    justify-content: space-between;
+    min-height: 3.5rem;
+    padding-inline: var(--Len-Espacio-2);
+}
+
+.LenAdmin-Perfil {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--Len-Texto);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: var(--Len-Espacio-1);
+    min-height: 2.75rem;
+    padding: 0 var(--Len-Espacio-0);
+}
+
+.LenAdmin-Contenido {
+    flex-grow: 1;
+    padding: var(--Len-Espacio-3) var(--Len-Espacio-2);
+}
+
+.LenAdmin-Pie {
+    border-top: 1px solid var(--Len-Borde);
+    color: var(--Len-Texto-Suave);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: .8rem;
+    gap: .25rem var(--Len-Espacio-2);
+    justify-content: space-between;
+    padding: .75rem var(--Len-Espacio-2);
+}
+
+@media (min-width: 992px) {
+    .LenAdmin-Barra,
+    .LenAdmin-Pie {
+        padding-inline: var(--Len-Espacio-3);
+    }
+
+    .LenAdmin-Contenido {
+        padding-inline: var(--Len-Espacio-3);
+    }
+}
+
+
+/* ----------------------------------------------------------------
+   Encabezado de pagina y migas
+   ---------------------------------------------------------------- */
+
+.LenEncabezado {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-2);
+    justify-content: space-between;
+    margin-bottom: var(--Len-Espacio-3);
+}
+
+.LenEncabezado-Titulo {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -.03em;
+    margin: 0;
+}
+
+.LenEncabezado-Texto {
+    color: var(--Len-Texto-Suave);
+    margin: var(--Len-Espacio-0) 0 0;
+}
+
+.LenEncabezado-Acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-1);
+}
+
+.LenMigas {
+    color: var(--Len-Texto-Suave);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: .85rem;
+    gap: 0 .5rem;
+    list-style: none;
+    margin: 0 0 var(--Len-Espacio-2);
+    padding: 0;
+}
+
+.LenMigas li + li::before {
+    content: "/";
+    margin-right: .5rem;
+}
+
+.LenMigas a {
+    color: var(--Len-Texto-Suave);
+    display: inline-block;
+    padding-block: .5rem;
+}
+
+.LenMigas a:hover {
+    color: var(--Len-Accion);
+}
+
+.LenMigas [aria-current="page"] {
+    color: var(--Len-Texto);
+    display: inline-block;
+    padding-block: .5rem;
+}
+
+
+/* ----------------------------------------------------------------
+   Filtros de listado
+   ---------------------------------------------------------------- */
+
+.LenFiltros {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-1) var(--Len-Espacio-2);
+}
+
+.LenFiltros > * {
+    flex: 1 1 12rem;
+}
+
+.LenFiltros > .LenFiltros-Principal {
+    flex-grow: 3;
+}
+
+.LenFiltros > .LenBoton {
+    flex: 0 0 auto;
+}
+
+
+/* ----------------------------------------------------------------
+   Galeria de producto y marcador de imagen
+   ---------------------------------------------------------------- */
+
+.LenGaleria {
+    display: grid;
+    gap: var(--Len-Espacio-1);
+}
+
+.LenGaleria-Principal {
+    aspect-ratio: 1 / 1;
+    background-color: #EEEDEA;
+    border: 0;
+    border-radius: var(--Len-Radio-Producto);
+    display: block;
+    overflow: hidden;
+    padding: 0;
+    width: 100%;
+}
+
+button.LenGaleria-Principal {
+    cursor: zoom-in;
+}
+
+.LenGaleria-Principal img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.LenGaleria-Miniaturas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--Len-Espacio-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenGaleria-Miniatura {
+    background-color: #EEEDEA;
+    border: 1px solid transparent;
+    border-radius: var(--Len-Radio-Producto);
+    cursor: pointer;
+    height: 4rem;
+    overflow: hidden;
+    padding: 0;
+    width: 4rem;
+}
+
+.LenGaleria-Miniatura[aria-current="true"] {
+    border-color: var(--Len-Tinta);
+}
+
+.LenGaleria-Miniatura img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+/* Hueco para una foto pendiente */
+.LenMarcador {
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    background-color: #EEEDEA;
+    color: var(--Len-Texto-Suave);
+    display: flex;
+    flex-direction: column;
+    font-size: .8rem;
+    justify-content: center;
+    overflow: hidden;
+    text-align: center;
+    width: 100%;
+}
+
+.LenMarcador--Apaisado { aspect-ratio: 4 / 3; }
+.LenMarcador--Horizontal { aspect-ratio: 16 / 9; }
+.LenMarcador--Vertical { aspect-ratio: 4 / 5; }
+
+/* Foto real dentro del marcador, cuando ya existe el archivo */
+.LenMarcador img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+.LenMarcador--Pequeno { flex-shrink: 0; height: 3.5rem; width: 3.5rem; }
+
+
+/* ----------------------------------------------------------------
+   Desplegable modal y fondo de Bootstrap con aspecto LEN
+   ---------------------------------------------------------------- */
+
+.LenDesplegable {
+    --bs-dropdown-bg: var(--Len-Superficie);
+    --bs-dropdown-border-color: var(--Len-Borde);
+    --bs-dropdown-border-radius: var(--Len-Radio-Medio);
+    --bs-dropdown-font-size: .95rem;
+    --bs-dropdown-link-active-bg: var(--Len-Marca-Suave);
+    --bs-dropdown-link-active-color: var(--Len-Texto);
+    --bs-dropdown-link-color: var(--Len-Texto);
+    --bs-dropdown-link-hover-bg: var(--Len-Superficie-Alterna);
+    --bs-dropdown-link-hover-color: var(--Len-Texto);
+    box-shadow: var(--Len-Sombra-Flotante);
+}
+
+.LenModal {
+    --bs-modal-bg: var(--Len-Superficie);
+    --bs-modal-border-color: var(--Len-Borde);
+    --bs-modal-border-radius: var(--Len-Radio-Medio);
+    --bs-modal-box-shadow: var(--Len-Sombra-Flotante);
+    --bs-modal-footer-border-color: var(--Len-Borde);
+    --bs-modal-header-border-width: 0;
+    --bs-modal-padding: 1.5rem;
+}
+
+.LenModal .modal-content {
+    box-shadow: var(--Len-Sombra-Flotante);
+}
+
+.LenModal .modal-title {
+    font-family: var(--Len-Sans);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-backdrop,
+.offcanvas-backdrop {
+    --bs-backdrop-bg: var(--Len-Tinta);
+    --bs-backdrop-opacity: .45;
+}
+
+
+/* ----------------------------------------------------------------
+   Portada. Carrusel de destacados y colecciones
+   ---------------------------------------------------------------- */
+
+.LenDestacado-Texto {
+    padding-block: var(--Len-Espacio-3) 0;
+}
+
+@media (min-width: 768px) {
+    .LenDestacado-Texto {
+        padding: var(--Len-Espacio-3) 0 var(--Len-Espacio-3) var(--Len-Espacio-4);
+    }
+}
+
+.LenDestacados-Controles {
+    display: flex;
+    gap: var(--Len-Espacio-1);
+    justify-content: flex-end;
+    margin-top: var(--Len-Espacio-2);
+}
+
+.LenColeccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--Len-Espacio-1);
+}
+
+.LenColeccion-Imagen {
+    border-radius: var(--Len-Radio-Producto);
+    display: block;
+    overflow: hidden;
+}
+
+.LenColeccion-Titulo {
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: -.03em;
+    margin: 0;
+}
+
+.LenColeccion-Titulo a {
+    color: var(--Len-Texto);
+    text-decoration: none;
+}
+
+.LenColeccion-Titulo a:hover {
+    color: var(--Len-Accion);
+}
+
+
+/* ----------------------------------------------------------------
+   Cliente. Bloques de la cuenta y de la compra
+   ---------------------------------------------------------------- */
+
+/* Seccion separada por una linea fina en vez de una caja */
+.LenBloque {
+    border-top: 1px solid var(--Len-Borde-Marcado);
+    margin-bottom: var(--Len-Espacio-4);
+    padding-top: var(--Len-Espacio-3);
+}
+
+.LenBloque-Titulo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    margin-bottom: var(--Len-Espacio-2);
+}
+
+/* Imagen pequena junto al nombre del producto en tablas */
+.LenLineaProducto {
+    align-items: center;
+    display: flex;
+    gap: var(--Len-Espacio-2);
+}
+
+.LenLineaProducto-Nombre {
+    font-weight: 600;
+    margin: 0;
+}
+
+.LenTabla-FilaAviso,
+.LenTabla tbody .LenTabla-FilaAviso:hover {
+    background-color: var(--Len-Aviso-Suave);
+}
+
+/* Importes del resumen de compra y del pedido */
+.LenResumen-Fila {
+    display: flex;
+    justify-content: space-between;
+    padding-block: .25rem;
+}
+
+.LenResumen-Total {
+    border-top: 1px solid var(--Len-Borde-Marcado);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: var(--Len-Espacio-1);
+    padding-top: var(--Len-Espacio-1);
+}
+
+/* Opcion con caja, para elegir una direccion */
+.LenSeleccion {
+    align-items: flex-start;
+    border: 1px solid var(--Len-Borde-Marcado);
+    border-radius: var(--Len-Radio-Pequeno);
+    display: flex;
+    gap: var(--Len-Espacio-2);
+    margin-bottom: var(--Len-Espacio-1);
+    padding: var(--Len-Espacio-2);
+}
+
+.LenSeleccion:has(input:checked) {
+    background-color: var(--Len-Marca-Suave);
+    border-color: var(--Len-Accion);
+}
+
+.LenSeleccion input {
+    accent-color: var(--Len-Accion);
+    flex-shrink: 0;
+    height: 1.15rem;
+    margin-top: .2rem;
+    width: 1.15rem;
+}
+
+.LenSeleccion label {
+    flex-grow: 1;
+}
+
+/* Accesos rapidos de Mi cuenta. Enlaces y un boton con el mismo aspecto */
+.LenAtajos {
+    display: grid;
+    gap: var(--Len-Espacio-2);
+    grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 768px) {
+    .LenAtajos {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.LenAtajos form {
+    margin: 0;
+}
+
+.LenAtajo {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--Len-Borde-Marcado);
+    color: var(--Len-Texto);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-weight: 600;
+    gap: .75rem;
+    min-height: 3.5rem;
+    padding: var(--Len-Espacio-1) 0;
+    text-align: left;
+    text-decoration: none;
+    width: 100%;
+}
+
+.LenAtajo:hover {
+    color: var(--Len-Accion);
+}
+
+.LenAtajo i {
+    font-size: 1.35rem;
+}
+
+/* Datos en dos columnas: etiqueta y valor */
+.LenDatos {
+    display: grid;
+    gap: .5rem var(--Len-Espacio-2);
+    grid-template-columns: minmax(6rem, 9rem) 1fr;
+    margin: 0;
+}
+
+.LenDatos dt {
+    color: var(--Len-Texto-Suave);
+    font-weight: 400;
+}
+
+.LenDatos dd {
+    margin: 0;
+}
+
+.LenVacio-Icono--Exito {
+    color: var(--Len-Exito);
+}
+
+/* Tabla angosta sin encabezado, para el resumen de compra */
+.LenTabla--Compacta {
+    min-width: 0;
+}
+
+.LenTabla--Compacta td {
+    padding: .5rem 0;
+}
+
+a.LenBoton[aria-disabled="true"] {
+    pointer-events: none;
+}
+
+/* Tabla que en telefono apila cada fila. Cada celda lleva data-etiqueta */
+.LenTabla--Apilada {
+    min-width: 36rem;
+}
+
+/* El campo de cantidad dentro de una tabla es mas angosto */
+.LenTabla .LenCampo--Corto {
+    width: 5rem;
+}
+
+.LenTabla--Apilada th,
+.LenTabla--Apilada td {
+    padding-inline: .5rem;
+}
+
+@media (max-width: 767.98px) {
+    .LenTabla--Apilada,
+    .LenTabla--Apilada tbody {
+        display: block;
+        min-width: 0;
+    }
+
+    .LenTabla--Apilada thead {
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        width: 1px;
+    }
+
+    .LenTabla--Apilada tr {
+        border-bottom: 1px solid var(--Len-Borde-Marcado);
+        display: block;
+        padding-block: var(--Len-Espacio-2);
+    }
+
+    .LenTabla--Apilada td {
+        align-items: center;
+        border: 0;
+        display: flex;
+        gap: var(--Len-Espacio-2);
+        justify-content: space-between;
+        padding: .35rem 0;
+        text-align: right;
+    }
+
+    .LenTabla--Apilada td[data-etiqueta]::before {
+        color: var(--Len-Texto-Suave);
+        content: attr(data-etiqueta);
+        font-size: .8rem;
+        text-align: left;
+    }
+
+    .LenTabla--Apilada td:first-child {
+        justify-content: flex-start;
+        text-align: left;
+    }
+}
+
+
+/* ----------------------------------------------------------------
+   Lista con filas separadas por linea
+   ---------------------------------------------------------------- */
+
+.LenLista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenLista > li {
+    align-items: baseline;
+    border-top: 1px solid var(--Len-Borde);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem var(--Len-Espacio-2);
+    justify-content: space-between;
+    padding: .75rem 0;
+}
+
+.LenLista-Detalle {
+    color: var(--Len-Texto-Suave);
+    display: block;
+    font-size: .8rem;
+}
+
+
+/* ----------------------------------------------------------------
+   Pagina de error y codigo de referencia
+   ---------------------------------------------------------------- */
+
+.LenVacio--Pagina {
+    border-top: 0;
+    padding-block: var(--Len-Espacio-6);
+}
+
+.LenVacio-Icono {
+    color: var(--Len-Texto-Suave);
+    display: block;
+    font-size: 2.5rem;
+    margin-bottom: var(--Len-Espacio-2);
+}
+
+.LenCodigo {
+    background-color: var(--Len-Superficie-Alterna);
+    border-radius: var(--Len-Radio-Pequeno);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: .85em;
+    padding: .1rem .4rem;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+/* Variante grafito y ajustes de estados deshabilitados */
+.LenBoton--Grafito { background: var(--Len-Tinta); border-color: var(--Len-Tinta); color: #fff; }
+.LenBoton--Grafito:hover { background: #454149; color: #fff; }
+.LenBoton:disabled:hover { background-color: var(--Len-Accion); border-color: var(--Len-Accion); }
+.LenBoton--Secundario:disabled:hover { background: transparent; border-color: var(--Len-Borde-Marcado); color: var(--Len-Texto); }
+.LenTabla th.LenTabla-Numero { text-align: right; }
+.LenCampo[type="file"] { min-width: 0; font-size: .875rem; }
+.LenCampo[type="file"]::file-selector-button { border: 0; border-right: 1px solid var(--Len-Borde); background: transparent; color: var(--Len-Texto); padding: .25rem .6rem .25rem 0; margin-right: .5rem; }
+
+/* ----------------------------------------------------------------
+   Admin: paneles con titulo, grafico de barras, actividad y stock
+   ---------------------------------------------------------------- */
+
+.LenPanel-Titulo {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    margin: 0;
+}
+
+.LenPanel-Texto {
+    color: var(--Len-Texto-Suave);
+    margin: .25rem 0 var(--Len-Espacio-3);
+}
+
+/* La altura de cada barra es una clase por pasos de 5 porque no se permite estilo en linea */
+.LenGrafico {
+    align-items: stretch;
+    display: flex;
+    gap: .5rem;
+    height: 12.5rem;
+}
+
+.LenGrafico-Columna {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: .4rem;
+    min-width: 0;
+    text-align: center;
+}
+
+.LenGrafico-Zona {
+    flex: 1 1 auto;
+    position: relative;
+}
+
+.LenGrafico-Barra {
+    background-color: var(--Len-Coral);
+    border-radius: var(--Len-Radio-Pequeno) var(--Len-Radio-Pequeno) 0 0;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+}
+
+.LenGrafico-Mes {
+    color: var(--Len-Texto-Suave);
+    font-size: .75rem;
+}
+
+.LenGrafico-Barra--0 { height: 0%; }
+.LenGrafico-Barra--5 { height: 5%; }
+.LenGrafico-Barra--10 { height: 10%; }
+.LenGrafico-Barra--15 { height: 15%; }
+.LenGrafico-Barra--20 { height: 20%; }
+.LenGrafico-Barra--25 { height: 25%; }
+.LenGrafico-Barra--30 { height: 30%; }
+.LenGrafico-Barra--35 { height: 35%; }
+.LenGrafico-Barra--40 { height: 40%; }
+.LenGrafico-Barra--45 { height: 45%; }
+.LenGrafico-Barra--50 { height: 50%; }
+.LenGrafico-Barra--55 { height: 55%; }
+.LenGrafico-Barra--60 { height: 60%; }
+.LenGrafico-Barra--65 { height: 65%; }
+.LenGrafico-Barra--70 { height: 70%; }
+.LenGrafico-Barra--75 { height: 75%; }
+.LenGrafico-Barra--80 { height: 80%; }
+.LenGrafico-Barra--85 { height: 85%; }
+.LenGrafico-Barra--90 { height: 90%; }
+.LenGrafico-Barra--95 { height: 95%; }
+.LenGrafico-Barra--100 { height: 100%; }
+
+.LenActividad {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.LenActividad-Item {
+    border-top: 1px solid var(--Len-Borde);
+    display: flex;
+    gap: .75rem;
+    padding: var(--Len-Espacio-1) 0;
+}
+
+.LenActividad-Item:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.LenActividad-Titulo {
+    font-weight: 600;
+    margin: 0;
+}
+
+.LenActividad-Texto {
+    color: var(--Len-Texto-Suave);
+    font-size: .9rem;
+    margin: .1rem 0;
+}
+
+.LenActividad-Fecha {
+    color: var(--Len-Texto-Suave);
+    font-size: .8rem;
+}
+
+/* El color viene de las clases estado-pedido-* que guarda la base */
+.LenPunto {
+    border-style: solid;
+    border-width: 2px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: .8rem;
+    margin-top: .35rem;
+    width: .8rem;
+}
+
+.LenAviso-Chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .5rem;
+}
+
+.LenStock {
+    align-items: center;
+    display: inline-flex;
+    gap: .4rem;
+    justify-content: center;
+}
+
+.LenTabla .LenTabla-Inactiva {
+    color: var(--Len-Texto-Suave);
+}
+
+.LenVacio--Compacto {
+    border-top: 0;
+    padding-block: var(--Len-Espacio-2);
+}
+
+.LenBoton--PeligroContorno {
+    background-color: transparent;
+    border-color: var(--Len-Peligro);
+    color: var(--Len-Peligro);
+}
+
+.LenBoton--PeligroContorno:hover {
+    background-color: var(--Len-Peligro-Suave);
+    border-color: var(--Len-Peligro);
+    color: var(--Len-Peligro);
+}
+
+/* Formularios del panel con ancho legible */
+.LenPanel--Formulario,
+.LenPanel--Documento {
+    max-width: 56rem;
+    padding: var(--Len-Espacio-3);
+}
+
+/* Prefijo de moneda pegado a un campo */
+.LenCampoGrupo-Prefijo {
+    align-items: center;
+    background-color: var(--Len-Superficie-Alterna);
+    border: 1px solid var(--Len-Borde-Campo);
+    border-bottom-left-radius: var(--Len-Radio-Pequeno);
+    border-right: 0;
+    border-top-left-radius: var(--Len-Radio-Pequeno);
+    display: flex;
+    padding: 0 .8rem;
+}
+
+.LenCampoGrupo-Prefijo + .LenCampo {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: var(--Len-Radio-Pequeno);
+    border-top-left-radius: 0;
+    border-top-right-radius: var(--Len-Radio-Pequeno);
+}
+
+.LenSuave { color: var(--Len-Texto-Suave); }
+
+.LenPanel-Cabecera {
+    border-bottom: 1px solid var(--Len-Borde);
+    padding: var(--Len-Espacio-2);
+}
+
+/* Tabla dentro de una columna a media pantalla */
+.LenTabla--Angosta { min-width: 24rem; }
+
+.LenAvatar--Grande {
+    font-size: 1.4rem;
+    height: 4rem;
+    width: 4rem;
+}
