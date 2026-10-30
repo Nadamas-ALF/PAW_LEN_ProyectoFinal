@@ -597,7 +597,7 @@ namespace LEN_Web.Utilidades
                 TotalVentas = ventas.Sum(venta => venta.Total),
                 TotalPedidos = TotalPedidosHistoricos,
                 PedidosPorPreparar = 8,
-                TotalClientesActivos = 18,
+                TotalClientesActivos = ClientesActivosHistoricos,
                 TotalProductosAgotados = Catalogo.Count(producto => producto.Activo && producto.Stock == 0),
                 VentasMensuales = ventas,
                 ActividadesRecientes =
@@ -1165,6 +1165,224 @@ namespace LEN_Web.Utilidades
             }
 
             return origen;
+        }
+
+        // ----------------------------------------------------------------
+        // Panel: usuarios
+        // ----------------------------------------------------------------
+
+        public const int UsuariosPorPagina = 3;
+
+        // Agregados de toda la tienda, igual que los del tablero. Los clientes
+        // activos del tablero se despejan de aqui para que las dos pantallas no
+        // digan cifras distintas de la misma cosa
+        public const int TotalUsuariosHistoricos = 22;
+
+        public const int UsuariosInactivosHistoricos = 2;
+
+        public const int AdministradoresHistoricos = 2;
+
+        public static int ClientesActivosHistoricos =>
+            TotalUsuariosHistoricos - UsuariosInactivosHistoricos - AdministradoresHistoricos;
+
+        // Los dos de TB_ROL
+        public static List<RolOpcion> Roles() =>
+        [
+            new() { IdRol = 1, Nombre = "Administrador" },
+            new() { IdRol = 2, Nombre = "Cliente" },
+        ];
+
+        public static ListadoUsuariosViewModel UsuariosAdmin(
+            string? busqueda,
+            int? idRol,
+            bool? activo,
+            int pagina)
+        {
+            var encontrados = UsuariosEjemplo.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                var texto = busqueda.Trim();
+                encontrados = encontrados.Where(usuario =>
+                    usuario.NombreCompleto.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || usuario.Correo.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || (usuario.Cedula ?? string.Empty).Contains(texto, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (idRol.HasValue)
+            {
+                encontrados = encontrados.Where(usuario => usuario.IdRol == idRol.Value);
+            }
+
+            if (activo.HasValue)
+            {
+                encontrados = encontrados.Where(usuario => usuario.Activo == activo.Value);
+            }
+
+            var lista = encontrados.ToList();
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)UsuariosPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+
+            return new ListadoUsuariosViewModel
+            {
+                Busqueda = busqueda,
+                IdRol = idRol,
+                Activo = activo,
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+                Roles = Roles(),
+
+                TotalUsuarios = TotalUsuariosHistoricos,
+                TotalInactivos = UsuariosInactivosHistoricos,
+                TotalAdministradores = AdministradoresHistoricos,
+                TotalActivos = TotalUsuariosHistoricos - UsuariosInactivosHistoricos,
+
+                Usuarios = lista
+                    .Skip((paginaSegura - 1) * UsuariosPorPagina)
+                    .Take(UsuariosPorPagina)
+                    .ToList(),
+            };
+        }
+
+        // Null si el usuario no existe. Devuelve tambien los dados de baja: el
+        // panel tiene que poder volver a activarlos
+        public static DetalleUsuarioViewModel? DetalleUsuario(int idUsuario)
+        {
+            var usuario = UsuariosEjemplo.FirstOrDefault(fila => fila.IdUsuario == idUsuario);
+
+            if (usuario is null)
+            {
+                return null;
+            }
+
+            var administradoresActivos = UsuariosEjemplo
+                .Count(fila => fila.EsAdministrador && fila.Activo);
+
+            return new DetalleUsuarioViewModel
+            {
+                Usuario = usuario,
+                Roles = Roles(),
+                Provincias = Provincias(),
+
+                // Aca se piden todas, activas e inactivas
+                Direcciones = DireccionesAdministrables(),
+
+                EsUnicoAdministradorActivo = usuario.EsAdministrador
+                    && usuario.Activo
+                    && administradoresActivos == 1,
+            };
+        }
+
+        // Las cuatro cuentas que las pantallas muestran en detalle. Marcela es la
+        // de la barra del panel, y las otras tres son los clientes del libro de
+        // pedidos: Sofia esta de baja y sus pedidos siguen existiendo (RG-97)
+        private static readonly List<UsuarioAdmin> UsuariosEjemplo =
+        [
+            new()
+            {
+                IdUsuario = 5, Nombre = "Marcela", Apellido = "Vega Rojas",
+                Correo = "marcela.vega@example.com",
+                Cedula = "118770005", Telefono = "8888-0005",
+                IdRol = 1, NombreRol = "Administrador",
+                Activo = true, FechaRegistro = new DateTime(2026, 2, 2),
+            },
+            new()
+            {
+                IdUsuario = 1, Nombre = "Ana", Apellido = "Mora Jimenez",
+                Correo = "ana.mora@example.com",
+                Cedula = "118880001", Telefono = "8888-0001",
+                IdRol = 2, NombreRol = "Cliente",
+                Activo = true, FechaRegistro = new DateTime(2026, 3, 14),
+            },
+
+            // Sin cedula: es opcional y la tabla lo muestra con un texto, no en
+            // blanco
+            new()
+            {
+                IdUsuario = 2, Nombre = "Luis", Apellido = "Castro Pineda",
+                Correo = "luis.castro@example.com",
+                Cedula = null, Telefono = "8888-0002",
+                IdRol = 2, NombreRol = "Cliente",
+                Activo = true, FechaRegistro = new DateTime(2026, 5, 28),
+            },
+            new()
+            {
+                IdUsuario = 3, Nombre = "Sofia", Apellido = "Ramirez Leon",
+                Correo = "sofia.ramirez@example.com",
+                Cedula = "207770003", Telefono = "8888-0003",
+                IdRol = 2, NombreRol = "Cliente",
+                Activo = false, FechaRegistro = new DateTime(2026, 7, 9),
+            },
+        ];
+
+        // ----------------------------------------------------------------
+        // Panel: reportes
+        // ----------------------------------------------------------------
+
+        // El rango que la pantalla propone al abrirse sin filtros
+        public const string ReporteDesdePorOmision = "2026-09-01";
+
+        public const string ReporteHastaPorOmision = "2026-09-30";
+
+        // Todo sale del libro de pedidos. Cuentan como venta Pagado,
+        // En preparacion y Entregado: el cancelado no suma
+        public static ReporteVentasViewModel Reporte(string? fechaInicio, string? fechaFin)
+        {
+            var desde = string.IsNullOrWhiteSpace(fechaInicio) ? ReporteDesdePorOmision : fechaInicio;
+            var hasta = string.IsNullOrWhiteSpace(fechaFin) ? ReporteHastaPorOmision : fechaFin;
+
+            var vendidos = EntreFechas(
+                    LibroPedidos.Where(pedido => pedido.IdEstado != 4),
+                    pedido => pedido.Fecha,
+                    desde,
+                    hasta)
+                .ToList();
+
+            return new ReporteVentasViewModel
+            {
+                FechaInicio = desde,
+                FechaFin = hasta,
+
+                Resumen = new ResumenReporte
+                {
+                    TotalVentas = vendidos.Sum(TotalDe),
+                    CantidadPedidos = vendidos.Count,
+                    ProductosVendidos = vendidos.Sum(pedido =>
+                        pedido.Lineas.Sum(linea => linea.Cantidad)),
+                },
+
+                // Solo los dias con ventas, ordenados del mas viejo al mas nuevo
+                VentasPorDia = vendidos
+                    .GroupBy(pedido => pedido.Fecha.Date)
+                    .OrderBy(grupo => grupo.Key)
+                    .Select(grupo => new VentaPorDia
+                    {
+                        Fecha = grupo.Key,
+                        CantidadPedidos = grupo.Count(),
+                        TotalVentas = grupo.Sum(TotalDe),
+                    })
+                    .ToList(),
+
+                ProductosMasVendidos = vendidos
+                    .SelectMany(pedido => pedido.Lineas)
+                    .GroupBy(linea => linea.IdProducto)
+                    .Select(grupo =>
+                    {
+                        var producto = Catalogo.First(fila => fila.Id == grupo.Key);
+
+                        return new ProductoVendido
+                        {
+                            IdProducto = producto.Id,
+                            NombreProducto = producto.Nombre,
+                            NombreCategoria = producto.Categoria,
+                            UnidadesVendidas = grupo.Sum(linea => linea.Cantidad),
+                            TotalVendido = grupo.Sum(linea => linea.Cantidad) * producto.Precio,
+                        };
+                    })
+                    .OrderByDescending(producto => producto.UnidadesVendidas)
+                    .ThenByDescending(producto => producto.TotalVendido)
+                    .ToList(),
+            };
         }
 
         // ----------------------------------------------------------------

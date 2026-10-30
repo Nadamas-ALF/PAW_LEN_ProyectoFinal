@@ -1,0 +1,402 @@
+@*
+Detalle del usuario. Origen Admin/UsuarioDetalle.html. Layout _LayoutAdmin. Solo Administrador
+Es tambien el Perfil del menu de la barra, con el Id del usuario de la sesion
+Datos de DetalleUsuarioViewModel mientras no exista SP_Usuario_ObtenerPorId
+Cuatro bloques: ficha, datos y rol, Seguridad con su ancla, y direcciones
+El bloque de direcciones usa _TarjetaDireccion y _SelectoresUbicacion, compartidas
+con Cliente/EditarCuenta. Aqui las modales llevan el IdUsuario del usuario visto
+*@
+@model DetalleUsuarioViewModel
+@{
+    var usuario = Model.Usuario;
+    ViewData["Titulo"] = Html.Encode(usuario.NombreCompleto);
+}
+
+<partial name="_Migas" model="@(new List<MigaViewModel> {
+    new() { Texto = "Principal", Url = Url.Action("Tablero", "Admin") },
+    new() { Texto = "Usuarios", Url = Url.Action("Usuarios", "Admin") },
+    new() { Texto = Html.Encode(usuario.NombreCompleto) },
+})" />
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Detalle del usuario",
+    Texto = "Datos, acceso y direcciones de la cuenta." })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Error,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<div class="row g-4">
+
+    <div class="col-12 col-xl-4">
+        <article class="LenPanel text-center">
+            <span class="LenAvatar LenAvatar--Grande mb-3">@usuario.Iniciales</span>
+            <h2 class="LenPanel-Titulo mb-1">@usuario.NombreCompleto</h2>
+            <p class="LenSuave mb-2">@usuario.Correo</p>
+            <p class="mb-3">
+                @if (usuario.EsAdministrador)
+                {
+                    <span class="LenBadge LenBadge--Marca">@usuario.NombreRol</span>
+                }
+                else
+                {
+                    <span class="LenBadge">@usuario.NombreRol</span>
+                }
+
+                @if (usuario.Activo)
+                {
+                    <span class="LenBadge LenBadge--Exito">Activo</span>
+                }
+                else
+                {
+                    <span class="LenBadge LenBadge--Neutro">Inactivo</span>
+                }
+            </p>
+
+            <partial name="_Datos" model="@(new DatosViewModel {
+                Clases = "text-start m-0",
+                Filas =
+                [
+                    new FilaDato { Etiqueta = "C&eacute;dula", Valor = usuario.Cedula },
+                    new FilaDato { Etiqueta = "Tel&eacute;fono", Valor = usuario.Telefono },
+                    new FilaDato { Etiqueta = "Registro",
+                                   Valor = usuario.FechaRegistro.ToString("dd/MM/yyyy") },
+                ] })" />
+        </article>
+    </div>
+
+
+    <div class="col-12 col-xl-8">
+
+        <article class="LenPanel p-0 mb-4">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Datos del usuario</h2></div>
+            <form class="p-3" method="post" action="/Usuario/Editar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Nombre">Nombre</label>
+                        <input type="text" class="LenCampo" id="Nombre" name="Nombre"
+                               maxlength="100" value="@usuario.Nombre" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Apellido">Apellido</label>
+                        <input type="text" class="LenCampo" id="Apellido" name="Apellido"
+                               maxlength="100" value="@usuario.Apellido" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Cedula">
+                            C&eacute;dula <span class="LenEtiqueta-Opcional">(opcional)</span>
+                        </label>
+                        <input type="text" class="LenCampo" id="Cedula" name="Cedula"
+                               maxlength="20" value="@usuario.Cedula">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Telefono">
+                            Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span>
+                        </label>
+                        <input type="tel" class="LenCampo" id="Telefono" name="Telefono"
+                               maxlength="20" value="@usuario.Telefono">
+                    </div>
+                    <div class="col-12">
+                        <label class="LenEtiqueta" for="Correo">Correo electr&oacute;nico</label>
+                        <input type="email" class="LenCampo" id="Correo" name="Correo"
+                               maxlength="150" value="@usuario.Correo" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="IdRol">Rol</label>
+                        <select class="LenCampo" id="IdRol" name="IdRol" required>
+                            @foreach (var rol in Model.Roles)
+                            {
+                                <option value="@rol.IdRol" selected="@(rol.IdRol == usuario.IdRol)">@rol.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="LenOpcion mb-0">
+                            <input type="checkbox" id="Activo" name="Activo" value="true"
+                                   checked="@usuario.Activo">
+                            <input type="hidden" name="Activo" value="false">
+                            <label for="Activo">Cuenta activa</label>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.EsUnicoAdministradorActivo)
+                {
+                    <partial name="_Aviso" model="@(new AvisoViewModel {
+                        Titulo = "Es el &uacute;nico administrador activo del sistema: no se le puede cambiar el rol ni desactivar la cuenta.",
+                        Variante = VarianteAviso.Info,
+                        Clases = "mt-3" })" />
+                }
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                    <a class="LenBoton LenBoton--Secundario" asp-controller="Admin" asp-action="Usuarios">Volver a usuarios</a>
+                </div>
+            </form>
+        </article>
+
+
+        @* El id lo usa el ancla del menu de la barra de arriba *@
+        <article class="LenPanel p-0 mb-4" id="Seguridad">
+            <div class="LenPanel-Cabecera">
+                <h2 class="LenPanel-Titulo"><i class="bi bi-shield-lock" aria-hidden="true"></i> Seguridad</h2>
+            </div>
+            <div class="p-3">
+                @* El administrador no pide la contrasena actual: repone el acceso
+                   de otra persona, no cambia la suya *@
+                <form method="post" action="/Usuario/RestablecerContrasena">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="Contrasena">Nueva contrase&ntilde;a</label>
+                            <div class="LenCampoGrupo">
+                                <input type="password" class="LenCampo" id="Contrasena"
+                                       name="Contrasena" minlength="8" maxlength="255"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                        aria-label="Mostrar u ocultar contrase&ntilde;a">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="ConfirmarContrasena">Confirmar contrase&ntilde;a</label>
+                            <div class="LenCampoGrupo">
+                                <input type="password" class="LenCampo" id="ConfirmarContrasena"
+                                       name="ConfirmarContrasena" minlength="8" maxlength="255"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                        aria-label="Mostrar u ocultar contrase&ntilde;a">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+
+                            @if (ViewData.ModelState["ConfirmarContrasena"]?.Errors.Count > 0)
+                            {
+                                <span class="LenError">Las dos contrase&ntilde;as no coinciden.</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="LenBoton LenBoton--Secundario">Restablecer contrase&ntilde;a</button>
+                    </div>
+                </form>
+
+                @* Pendiente de verdad: SP_Usuario_AsignarContrasenaTemporal ya
+                   existe en la base y evita que el administrador la conozca *@
+                <p class="LenAyuda mt-4">
+                    En lugar de escribirle una contrase&ntilde;a que el administrador
+                    acaba conociendo, generar una temporal con vigencia y que el
+                    usuario la cambie al entrar.
+                </p>
+                <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno mt-2" disabled
+                        title="Contrase&ntilde;a temporal: pendiente">
+                    Generar contrase&ntilde;a temporal
+                </button>
+            </div>
+        </article>
+
+
+        <article class="LenPanel p-0">
+            <div class="LenPanel-Cabecera d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h2 class="LenPanel-Titulo">Direcciones del usuario</h2>
+                <button type="button" class="LenBoton LenBoton--Principal LenBoton--Pequeno"
+                        data-bs-toggle="modal" data-bs-target="#AgregarDireccion">
+                    Agregar direcci&oacute;n
+                </button>
+            </div>
+            <div class="p-3">
+
+                @if (Model.Direcciones.Count > 0)
+                {
+                    <div class="row g-3">
+                        @* Aqui la modal de editar es una sola compartida, asi que
+                           la tarjeta lleva los data- que len.js copia *@
+                        @foreach (var direccion in Model.Direcciones)
+                        {
+                            <div class="col-md-6">
+                                <partial name="_TarjetaDireccion" model="@(new TarjetaDireccionViewModel {
+                                    Direccion = direccion,
+                                    RutaDesactivar = "/Usuario/DesactivarDireccion",
+                                    IdUsuario = usuario.IdUsuario,
+                                    ModalEditar = "#EditarDireccion",
+                                    MostrarInsigniaActiva = true,
+                                    ClaseFormulario = "m-0",
+                                    ClaseBotonDesactivar = "LenBoton LenBoton--PeligroContorno LenBoton--Pequeno",
+                                    Datos = new Dictionary<string, string?> {
+                                        ["id"] = direccion.IdDireccion.ToString(),
+                                        ["destinatario"] = direccion.NombreDestinatario,
+                                        ["telefono"] = direccion.TelefonoContacto,
+                                        ["exacta"] = direccion.DireccionExacta,
+                                        ["referencia"] = direccion.Referencia,
+                                        ["provincia"] = direccion.IdProvincia.ToString(),
+                                        ["canton"] = direccion.IdCanton.ToString(),
+                                        ["distrito"] = direccion.IdDistrito.ToString(),
+                                        ["principal"] = direccion.EsPrincipal.ToString().ToLowerInvariant(),
+                                    } })" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <partial name="_Vacio" model="@(new VacioViewModel {
+                        Titulo = "Sin direcciones",
+                        Texto = "Este usuario no tiene direcciones registradas.",
+                        Clases = "LenVacio--Compacto mt-3" })" />
+                }
+            </div>
+        </article>
+    </div>
+</div>
+
+
+<div class="modal fade LenModal" id="AgregarDireccion" tabindex="-1" aria-labelledby="TituloAgregarDireccion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Usuario/AgregarDireccion">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
+
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloAgregarDireccion">Agregar direcci&oacute;n</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarDestinatario">Nombre del destinatario</label>
+                            <input type="text" class="LenCampo" id="AgregarDestinatario"
+                                   name="NombreDestinatario" maxlength="150" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarTelefono">Tel&eacute;fono de contacto</label>
+                            <input type="tel" class="LenCampo" id="AgregarTelefono"
+                                   name="TelefonoContacto" maxlength="20" required>
+                        </div>
+
+                        <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
+                            Prefijo = "Agregar",
+                            Provincias = Model.Provincias })" />
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarDireccionExacta">Direcci&oacute;n exacta</label>
+                            <textarea class="LenCampo" id="AgregarDireccionExacta" name="DireccionExacta"
+                                      rows="3" maxlength="300" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarReferencia">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <textarea class="LenCampo" id="AgregarReferencia" name="Referencia"
+                                      rows="2" maxlength="300"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="AgregarEsPrincipal" name="EsPrincipal" value="true">
+                                <input type="hidden" name="EsPrincipal" value="false">
+                                <label for="AgregarEsPrincipal">Establecer como direcci&oacute;n principal</label>
+                            </div>
+                            <span class="LenAyuda">
+                                La primera direcci&oacute;n queda principal aunque no se marque.
+                                Si se marca esta, la que era principal deja de serlo.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar direcci&oacute;n</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@* Una sola modal para editar. Nace vacia: la llena len.js con los data- de la
+   tarjeta, igual que la de categorias *@
+<div class="modal fade LenModal" id="EditarDireccion" tabindex="-1" aria-labelledby="TituloEditarDireccion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Usuario/ActualizarDireccion">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdDireccion" value="">
+                <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
+
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloEditarDireccion">Editar direcci&oacute;n</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarDestinatario">Nombre del destinatario</label>
+                            <input type="text" class="LenCampo" id="EditarDestinatario"
+                                   name="NombreDestinatario" maxlength="150" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarTelefono">Tel&eacute;fono de contacto</label>
+                            <input type="tel" class="LenCampo" id="EditarTelefono"
+                                   name="TelefonoContacto" maxlength="20" required>
+                        </div>
+
+                        <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
+                            Prefijo = "Editar",
+                            Provincias = Model.Provincias })" />
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="EditarDireccionExacta">Direcci&oacute;n exacta</label>
+                            <textarea class="LenCampo" id="EditarDireccionExacta" name="DireccionExacta"
+                                      rows="3" maxlength="300" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="EditarReferencia">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <textarea class="LenCampo" id="EditarReferencia" name="Referencia"
+                                      rows="2" maxlength="300"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="EditarEsPrincipal" name="EsPrincipal" value="true">
+                                <input type="hidden" name="EsPrincipal" value="false">
+                                <label for="EditarEsPrincipal">Establecer como direcci&oacute;n principal</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

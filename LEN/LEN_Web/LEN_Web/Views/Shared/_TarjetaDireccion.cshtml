@@ -1,0 +1,66 @@
+@*
+Tarjeta de una direccion. Sale en Cliente/EditarCuenta y en Admin/UsuarioDetalle
+La columna la pone la vista: la parcial arma el panel de adentro
+La direccion dada de baja pierde el boton de desactivar, no el de editar: sigue
+pudiendose corregir
+*@
+@model TarjetaDireccionViewModel
+@{
+    var direccion = Model.Direccion;
+
+    // Los data- se arman aca porque Razor no admite un foreach dentro de la
+    // lista de atributos de una etiqueta. Los valores van escapados
+    var atributosDatos = string.Join(" ", Model.Datos
+        .Select(dato => $"data-{dato.Key}=\"{Html.Encode(dato.Value ?? string.Empty)}\""));
+}
+
+<div class="LenPanel h-100">
+    <p class="mb-0">
+        <span class="fw-bold">@direccion.NombreDestinatario</span>
+
+        @if (direccion.EsPrincipal)
+        {
+            <span class="LenBadge LenBadge--Exito ms-1">Principal</span>
+        }
+
+        @if (!direccion.Activo)
+        {
+            <span class="LenBadge LenBadge--Neutro ms-1">Inactiva</span>
+        }
+        else if (Model.MostrarInsigniaActiva)
+        {
+            <span class="LenBadge LenBadge--Exito ms-1">Activa</span>
+        }
+
+        <br>
+        @direccion.DireccionExacta
+        <span class="LenAyuda">
+            @direccion.Ubicacion &middot; Tel: @direccion.TelefonoContacto
+        </span>
+
+        @if (!string.IsNullOrWhiteSpace(direccion.Referencia))
+        {
+            <span class="LenAyuda">Referencia: @direccion.Referencia</span>
+        }
+    </p>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                data-bs-toggle="modal" data-bs-target="@Model.ModalEditar" @Html.Raw(atributosDatos)>
+            Editar
+        </button>
+
+        @if (direccion.Activo)
+        {
+            <form class="@Model.ClaseFormulario" method="post" action="@Model.RutaDesactivar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
+                @if (Model.IdUsuario.HasValue)
+                {
+                    <input type="hidden" name="IdUsuario" value="@Model.IdUsuario.Value">
+                }
+                <button type="submit" class="@Model.ClaseBotonDesactivar">Desactivar</button>
+            </form>
+        }
+    </div>
+</div>

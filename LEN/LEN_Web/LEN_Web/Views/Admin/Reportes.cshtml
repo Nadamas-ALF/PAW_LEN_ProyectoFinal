@@ -1,0 +1,161 @@
+@*
+Reportes de ventas. Origen Admin/Reportes.html. Layout _LayoutAdmin. Solo Administrador
+Datos de ReporteVentasViewModel mientras no existan los tres SP_Reporte_*
+Los tres bloques usan el mismo rango. Cuentan Pagado, En preparacion y Entregado
+Los indicadores no llevan icono, igual que los de Pagos
+Exportar no existe y el boton queda deshabilitado
+*@
+@model ReporteVentasViewModel
+@{
+    ViewData["Titulo"] = "Reportes";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Reportes de ventas</h1>
+        <p class="LenEncabezado-Texto">Resultados del per&iacute;odo elegido. Los pedidos cancelados no se cuentan.</p>
+    </div>
+    <div class="LenEncabezado-Acciones">
+        @* Exportar no existe todavia: el boton se marca y no finge nada *@
+        <button type="button" class="LenBoton LenBoton--Secundario" disabled title="Exportar: pendiente">
+            <i class="bi bi-download" aria-hidden="true"></i> Exportar
+        </button>
+    </div>
+</div>
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+
+<form method="get" asp-controller="Admin" asp-action="Reportes" class="LenFiltros mb-4">
+    <div>
+        <label class="LenEtiqueta" for="FechaInicio">Fecha de inicio</label>
+        <input type="date" class="LenCampo" id="FechaInicio" name="fechaInicio"
+               value="@Model.FechaInicio" required>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaFin">Fecha de fin</label>
+        <input type="date" class="LenCampo" id="FechaFin" name="fechaFin"
+               value="@Model.FechaFin" required>
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">
+        <i class="bi bi-search" aria-hidden="true"></i> Generar reporte
+    </button>
+</form>
+
+
+<section class="row g-4 mb-4" aria-label="Resumen del per&iacute;odo">
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Total vendido",
+            Valor = FormatoMoneda.Colones(Model.Resumen.TotalVentas) })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Pedidos",
+            Valor = Model.Resumen.CantidadPedidos.ToString() })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Ticket promedio",
+            Valor = FormatoMoneda.Colones(Model.Resumen.TicketPromedio) })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Unidades vendidas",
+            Valor = Model.Resumen.ProductosVendidos.ToString() })" />
+    </div>
+</section>
+
+
+<div class="row g-4">
+
+    <div class="col-12 col-lg-6">
+        <article class="LenPanel p-0 h-100">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Ventas por d&iacute;a</h2></div>
+
+            @if (Model.VentasPorDia.Count > 0)
+            {
+                <div class="LenTabla-Envoltura">
+                    <table class="LenTabla LenTabla--Angosta">
+                        <thead>
+                            <tr>
+                                <th scope="col">Fecha</th>
+                                <th scope="col" class="text-center">Pedidos</th>
+                                <th scope="col" class="LenTabla-Numero">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @* Solo salen los dias con ventas *@
+                            @foreach (var dia in Model.VentasPorDia)
+                            {
+                                <tr>
+                                    <td>@dia.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">@dia.CantidadPedidos</td>
+                                    <td class="LenTabla-Numero">@FormatoMoneda.Colones(dia.TotalVentas)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <partial name="_Vacio" model="@(new VacioViewModel {
+                    Titulo = "Sin ventas en el per&iacute;odo",
+                    Texto = "No hay ventas registradas en el rango elegido.",
+                    Clases = "LenVacio--Compacto" })" />
+            }
+        </article>
+    </div>
+
+
+    <div class="col-12 col-lg-6">
+        <article class="LenPanel p-0 h-100">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Productos m&aacute;s vendidos</h2></div>
+
+            @if (Model.ProductosMasVendidos.Count > 0)
+            {
+                <div class="LenTabla-Envoltura">
+                    <table class="LenTabla LenTabla--Angosta">
+                        <thead>
+                            <tr>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Categor&iacute;a</th>
+                                <th scope="col" class="text-center">Unidades</th>
+                                <th scope="col" class="LenTabla-Numero">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in Model.ProductosMasVendidos)
+                            {
+                                <tr>
+                                    <td>@producto.NombreProducto</td>
+                                    <td>@producto.NombreCategoria</td>
+                                    <td class="text-center">@producto.UnidadesVendidas</td>
+                                    <td class="LenTabla-Numero">@FormatoMoneda.Colones(producto.TotalVendido)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <partial name="_Vacio" model="@(new VacioViewModel {
+                    Titulo = "Sin ventas en el per&iacute;odo",
+                    Texto = "No hay productos vendidos en el rango elegido.",
+                    Clases = "LenVacio--Compacto" })" />
+            }
+        </article>
+    </div>
+</div>

@@ -1,0 +1,361 @@
+@*
+Administracion de usuarios. Origen Admin/Usuarios.html. Layout _LayoutAdmin. Solo Administrador
+Datos de ListadoUsuariosViewModel mientras no exista SP_Usuario_Listar
+Las internas y las de clientes en la misma tabla, como estan en TB_USUARIO
+Las iniciales del avatar las calcula el modelo, no la vista
+La modal de editar es una sola y len.js la llena con los data- de la fila
+*@
+@model ListadoUsuariosViewModel
+@{
+    ViewData["Titulo"] = "Usuarios";
+
+    var filtros = new Dictionary<string, string?>
+    {
+        ["busqueda"] = Model.Busqueda,
+        ["idRol"] = Model.IdRol?.ToString(),
+        ["activo"] = Model.Activo?.ToString().ToLowerInvariant(),
+    };
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Administraci&oacute;n de usuarios",
+    Texto = "Cuentas del sistema, internas y de clientes.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Agregar usuario",
+            Icono = "person-plus",
+            ModalObjetivo = "#AgregarUsuario",
+            Clase = "LenBoton LenBoton--Principal" },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Cerrable = true,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Error,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+
+<section class="row g-4 mb-4" aria-label="Indicadores de usuarios">
+
+    <div class="col-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Usuarios",
+            Valor = Model.TotalUsuarios.ToString() })" />
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Activos",
+            Valor = Model.TotalActivos.ToString() })" />
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Inactivos",
+            Valor = Model.TotalInactivos.ToString() })" />
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Administradores",
+            Valor = Model.TotalAdministradores.ToString() })" />
+    </div>
+</section>
+
+
+<form method="get" asp-controller="Admin" asp-action="Usuarios" class="LenFiltros mb-4">
+    <div class="LenFiltros-Principal">
+        <label class="LenEtiqueta" for="Busqueda">Buscar</label>
+        <div class="LenCampoGrupo">
+            <span class="LenCampoGrupo-Prefijo"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input type="search" class="LenCampo" id="Busqueda" name="busqueda"
+                   value="@Model.Busqueda" placeholder="Nombre, correo o c&eacute;dula"
+                   autocomplete="off">
+        </div>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="IdRol">Rol</label>
+        <select class="LenCampo" id="IdRol" name="idRol">
+            <option value="">Todos</option>
+            @foreach (var rol in Model.Roles)
+            {
+                <option value="@rol.IdRol" selected="@(rol.IdRol == Model.IdRol)">@rol.Nombre</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="Estado">Estado</label>
+        <select class="LenCampo" id="Estado" name="activo">
+            <option value="">Todos</option>
+            <option value="true" selected="@(Model.Activo == true)">Activos</option>
+            <option value="false" selected="@(Model.Activo == false)">Inactivos</option>
+        </select>
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">Filtrar</button>
+</form>
+
+
+<div class="LenPanel p-0">
+    <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Usuarios registrados</h2></div>
+    <div class="LenTabla-Envoltura">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">C&eacute;dula</th>
+                    <th scope="col">Tel&eacute;fono</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Fecha de registro</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Usuarios.Count > 0)
+                {
+                    @foreach (var usuario in Model.Usuarios)
+                    {
+                        @* Dado de baja: no inicia sesion pero sus pedidos siguen
+                           existiendo. Nunca se borra (RG-97) *@
+                        <tr class="@(usuario.Activo ? null : "LenTabla-Inactiva")">
+                            <td>
+                                <div class="LenLineaProducto">
+                                    <span class="LenAvatar">@usuario.Iniciales</span>
+                                    <div>
+                                        <strong class="d-block">@usuario.NombreCompleto</strong>
+                                        <small class="LenSuave">@usuario.Correo</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="@(string.IsNullOrWhiteSpace(usuario.Cedula) ? "LenSuave" : null)">
+                                @(string.IsNullOrWhiteSpace(usuario.Cedula) ? "No registrada" : usuario.Cedula)
+                            </td>
+                            <td class="@(string.IsNullOrWhiteSpace(usuario.Telefono) ? "LenSuave" : null)">
+                                @(string.IsNullOrWhiteSpace(usuario.Telefono) ? "No registrado" : usuario.Telefono)
+                            </td>
+                            <td>
+                                @if (usuario.EsAdministrador)
+                                {
+                                    <span class="LenBadge LenBadge--Marca">@usuario.NombreRol</span>
+                                }
+                                else
+                                {
+                                    <span class="LenBadge">@usuario.NombreRol</span>
+                                }
+                            </td>
+                            <td>
+                                @if (usuario.Activo)
+                                {
+                                    <span class="LenBadge LenBadge--Exito">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="LenBadge LenBadge--Neutro">Inactivo</span>
+                                }
+                            </td>
+                            <td>@usuario.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div class="LenTabla-Acciones">
+                                    <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                       asp-controller="Admin" asp-action="UsuarioDetalle"
+                                       asp-route-idUsuario="@usuario.IdUsuario">
+                                        <i class="bi bi-eye" aria-hidden="true"></i> Ver
+                                    </a>
+
+                                    @* Los data- los lee len.js para llenar la modal compartida *@
+                                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                            data-bs-toggle="modal" data-bs-target="#EditarUsuario"
+                                            data-id="@usuario.IdUsuario" data-nombre="@usuario.Nombre"
+                                            data-apellido="@usuario.Apellido"
+                                            data-cedula="@usuario.Cedula" data-telefono="@usuario.Telefono"
+                                            data-correo="@usuario.Correo"
+                                            data-rol="@usuario.IdRol"
+                                            data-activo="@usuario.Activo.ToString().ToLowerInvariant()">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i> Editar
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    @* El bloque vacio va dentro de la tabla, no despues *@
+                    <tr>
+                        <td colspan="7">
+                            <partial name="_Vacio" model="@(new VacioViewModel {
+                                Titulo = "Sin usuarios",
+                                Texto = "No hay usuarios registrados.",
+                                Clases = "LenVacio--Compacto" })" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Paginacion" model="@(new PaginacionViewModel {
+    PaginaActual = Model.PaginaActual,
+    TotalPaginas = Model.TotalPaginas,
+    Ruta = "/Admin/Usuarios",
+    Filtros = filtros })" />
+
+
+<div class="modal fade LenModal" id="AgregarUsuario" tabindex="-1" aria-labelledby="TituloAgregarUsuario" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Usuario/Crear">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloAgregarUsuario">Agregar usuario</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarNombre">Nombre</label>
+                            <input type="text" class="LenCampo" id="AgregarNombre" name="Nombre"
+                                   maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarApellido">Apellido</label>
+                            <input type="text" class="LenCampo" id="AgregarApellido" name="Apellido"
+                                   maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarCedula">C&eacute;dula <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <input type="text" class="LenCampo" id="AgregarCedula" name="Cedula" maxlength="20">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarTelefono">Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <input type="tel" class="LenCampo" id="AgregarTelefono" name="Telefono" maxlength="20">
+                        </div>
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarCorreo">Correo electr&oacute;nico</label>
+                            <input type="email" class="LenCampo" id="AgregarCorreo" name="Correo"
+                                   maxlength="150" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarIdRol">Rol</label>
+                            <select class="LenCampo" id="AgregarIdRol" name="IdRol" required>
+                                <option value="">Seleccione un rol</option>
+                                @foreach (var rol in Model.Roles)
+                                {
+                                    <option value="@rol.IdRol">@rol.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="AgregarActivo" name="Activo" value="true" checked>
+                                <input type="hidden" name="Activo" value="false">
+                                <label for="AgregarActivo">Cuenta activa</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarContrasena">Contrase&ntilde;a inicial</label>
+                            <input type="password" class="LenCampo" id="AgregarContrasena" name="Contrasena"
+                                   minlength="8" maxlength="255" autocomplete="new-password" required>
+                            <span class="LenAyuda">
+                                M&iacute;nimo 8 caracteres. El hash lo calcula el API, la contrase&ntilde;a
+                                nunca se guarda en claro.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@* Una sola modal para editar, sin contrasena: eso se hace desde el detalle.
+   Nace vacia porque la llena len.js con los data- de la fila *@
+<div class="modal fade LenModal" id="EditarUsuario" tabindex="-1" aria-labelledby="TituloEditarUsuario" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Usuario/Editar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdUsuario" value="">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloEditarUsuario">Editar usuario</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarNombre">Nombre</label>
+                            <input type="text" class="LenCampo" id="EditarNombre" name="Nombre"
+                                   maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarApellido">Apellido</label>
+                            <input type="text" class="LenCampo" id="EditarApellido" name="Apellido"
+                                   maxlength="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarCedula">C&eacute;dula <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <input type="text" class="LenCampo" id="EditarCedula" name="Cedula" maxlength="20">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarTelefono">Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <input type="tel" class="LenCampo" id="EditarTelefono" name="Telefono" maxlength="20">
+                        </div>
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="EditarCorreo">Correo electr&oacute;nico</label>
+                            <input type="email" class="LenCampo" id="EditarCorreo" name="Correo"
+                                   maxlength="150" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarIdRol">Rol</label>
+                            <select class="LenCampo" id="EditarIdRol" name="IdRol" required>
+                                @foreach (var rol in Model.Roles)
+                                {
+                                    <option value="@rol.IdRol">@rol.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="EditarActivo" name="Activo" value="true">
+                                <input type="hidden" name="Activo" value="false">
+                                <label for="EditarActivo">Cuenta activa</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

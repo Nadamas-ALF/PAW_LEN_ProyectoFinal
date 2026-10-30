@@ -146,46 +146,14 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
                 <div class="row g-3">
                     @foreach (var direccion in Model.Direcciones)
                     {
+                        @* La tarjeta la comparte con Admin/UsuarioDetalle. Aca hay
+                           una modal por direccion, asi que el objetivo lleva el Id
+                           y no hacen falta los data- *@
                         <div class="col-md-6">
-                            <div class="LenPanel h-100">
-                                <p class="mb-0">
-                                    <span class="fw-bold">@direccion.NombreDestinatario</span>
-                                    @if (direccion.EsPrincipal)
-                                    {
-                                        <span class="LenBadge LenBadge--Exito ms-1">Principal</span>
-                                    }
-                                    @if (!direccion.Activo)
-                                    {
-                                        <span class="LenBadge LenBadge--Neutro ms-1">Inactiva</span>
-                                    }
-                                    <br>
-                                    @direccion.DireccionExacta
-                                    <span class="LenAyuda">
-                                        @direccion.Ubicacion &middot; Tel: @direccion.TelefonoContacto
-                                    </span>
-                                    @if (!string.IsNullOrWhiteSpace(direccion.Referencia))
-                                    {
-                                        <span class="LenAyuda">Referencia: @direccion.Referencia</span>
-                                    }
-                                </p>
-
-                                <div class="d-flex flex-wrap gap-2 mt-3">
-                                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
-                                            data-bs-toggle="modal" data-bs-target="#EditarDireccion@(direccion.IdDireccion)">
-                                        Editar
-                                    </button>
-
-                                    @* La dada de baja ya no se puede volver a desactivar *@
-                                    @if (direccion.Activo)
-                                    {
-                                        <form class="d-inline" method="post" action="/Cuenta/DesactivarDireccion">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
-                                            <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">Desactivar</button>
-                                        </form>
-                                    }
-                                </div>
-                            </div>
+                            <partial name="_TarjetaDireccion" model="@(new TarjetaDireccionViewModel {
+                                Direccion = direccion,
+                                RutaDesactivar = "/Cuenta/DesactivarDireccion",
+                                ModalEditar = $"#EditarDireccion{direccion.IdDireccion}" })" />
                         </div>
                     }
                 </div>

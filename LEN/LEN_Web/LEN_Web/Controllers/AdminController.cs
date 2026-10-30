@@ -100,6 +100,33 @@ namespace LEN_Web.Controllers
             return View(DatosEjemplo.Facturas(busqueda, fechaInicio, fechaFin, pagina));
         }
 
+        public IActionResult Usuarios(string? busqueda, int? idRol, bool? activo, int pagina = 1)
+        {
+            return View(DatosEjemplo.UsuariosAdmin(busqueda, idRol, activo, pagina));
+        }
+
+        // Es tambien el Perfil del menu de la barra de arriba, con el Id del
+        // usuario de la sesion
+        public IActionResult UsuarioDetalle(int idUsuario)
+        {
+            var usuario = DatosEjemplo.DetalleUsuario(idUsuario);
+
+            if (usuario is null)
+            {
+                TempData["MensajeError"] = "El usuario indicado no existe.";
+                return RedirectToAction(nameof(Usuarios));
+            }
+
+            return View(usuario);
+        }
+
+        // Las dos fechas son obligatorias. Sin ellas se propone un rango en
+        // lugar de responder con un error: la pantalla tiene que abrir
+        public IActionResult Reportes(string? fechaInicio, string? fechaFin)
+        {
+            return View(DatosEjemplo.Reporte(fechaInicio, fechaFin));
+        }
+
         public IActionResult FacturaDetalle(int idFactura)
         {
             var factura = DatosEjemplo.DetalleFactura(_entorno, idFactura);

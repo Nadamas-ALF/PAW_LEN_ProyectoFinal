@@ -97,6 +97,38 @@ namespace LEN_Web.Models
         public string? Clases { get; set; }
     }
 
+    // La tarjeta de una direccion. Sale en Cliente/EditarCuenta y en
+    // Admin/UsuarioDetalle, que la plantilla ya pedia compartir (RG-113)
+    // Lo que cambia entre las dos son la ruta del POST, el IdUsuario que solo
+    // manda el panel, y si la modal de editar es una por fila o una compartida
+    public class TarjetaDireccionViewModel
+    {
+        public DireccionEnvio Direccion { get; set; } = new();
+
+        public string RutaDesactivar { get; set; } = string.Empty;
+
+        // Solo el panel lo manda: el cliente actua sobre sus propias direcciones
+        // y el IdUsuario sale del token de la sesion
+        public int? IdUsuario { get; set; }
+
+        // El objetivo del boton de editar, con la almohadilla incluida
+        public string ModalEditar { get; set; } = string.Empty;
+
+        // El panel distingue Activa de Inactiva. El cliente solo marca la de baja
+        public bool MostrarInsigniaActiva { get; set; }
+
+        // Los data- que len.js copia a la modal compartida. Vacio cuando hay una
+        // modal por direccion y no hace falta
+        public Dictionary<string, string?> Datos { get; set; } = new();
+
+        // Las dos pantallas pintan el boton de desactivar distinto: el cliente
+        // en secundario y el panel en rojo. Los valores por omision son los del
+        // cliente. Unificarlo seria rediseniar, y eso no toca en esta fase
+        public string ClaseBotonDesactivar { get; set; } = "LenBoton LenBoton--Secundario LenBoton--Pequeno";
+
+        public string ClaseFormulario { get; set; } = "d-inline";
+    }
+
     public class SelectoresUbicacionViewModel
     {
         // Los identificadores se arman con Prefijo mas el campo mas Sufijo, igual
