@@ -25,6 +25,15 @@ Todavia no hay accion POST en AccesoController, falta conectar el login contra L
                 Clases = "mb-4" })" />
         }
 
+        @if (TempData["MensajePendiente"] is string pendiente)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel {
+                Titulo = pendiente,
+                Variante = VarianteAviso.Aviso,
+                Cerrable = true,
+                Clases = "mb-4" })" />
+        }
+
         <form method="post" action="/Acceso/IniciarSesion" novalidate>
             @Html.AntiForgeryToken()
 

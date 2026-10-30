@@ -21,6 +21,15 @@ El hash de la contrasena se calcula en el API nunca en la base ni en el navegado
             <p class="LenTexto LenTexto--Guia mt-2 mb-0">Complete sus datos para registrarse en LEN.</p>
         </div>
 
+        @if (TempData["MensajePendiente"] is string pendiente)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel {
+                Titulo = pendiente,
+                Variante = VarianteAviso.Aviso,
+                Cerrable = true,
+                Clases = "mb-4" })" />
+        }
+
         <form method="post" action="/Acceso/Registro" autocomplete="off">
             @Html.AntiForgeryToken()
 
@@ -53,7 +62,8 @@ El hash de la contrasena se calcula en el API nunca en la base ni en el navegado
 
                 <div class="col-12 col-md-6">
                     <label class="LenEtiqueta" asp-for="Telefono">Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span></label>
-                    <input asp-for="Telefono" class="LenCampo" maxlength="20" autocomplete="tel">
+                    @* type tel explicito: asp-for solo mira el modelo y ahi Telefono es un string, asi que saldria text *@
+                    <input asp-for="Telefono" type="tel" class="LenCampo" maxlength="20" autocomplete="tel">
                 </div>
 
                 <div class="col-12">
