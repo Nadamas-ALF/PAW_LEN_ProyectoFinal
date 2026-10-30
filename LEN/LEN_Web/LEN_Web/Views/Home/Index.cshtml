@@ -95,10 +95,11 @@ Las colecciones de la seccion 4 estan fijas, no salen de la base
 <section class="LenSeccion">
     <div class="container-lg">
 
-        <div class="LenAviso LenAviso--Exito mb-4" role="status" hidden>
-            <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-check-circle"></i></span>
-            <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">El producto fue agregado al carrito.</p></div>
-        </div>
+        <partial name="_Aviso" model="@(new AvisoViewModel {
+            Titulo = "El producto fue agregado al carrito.",
+            Variante = VarianteAviso.Exito,
+            Oculto = true,
+            Clases = "mb-4" })" />
 
         <div class="LenSeccion-Encabezado">
             <div>
@@ -115,49 +116,17 @@ Las colecciones de la seccion 4 estan fijas, no salen de la base
                 @foreach (var producto in Model.Productos)
                 {
                     <div class="col">
-                        <article class="LenProducto @(producto.Disponible ? "" : "LenProducto--Agotado")">
-                            <a class="LenProducto-Imagen" href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto" tabindex="-1" aria-hidden="true">
-                                @if (!producto.Disponible)
-                                {
-                                    <span class="LenProducto-Cinta"><span class="LenBadge LenBadge--Negativo">Agotado</span></span>
-                                }
-                                @if (producto.RutaImagen is not null)
-                                {
-                                    <img src="~/imagenes/@producto.RutaImagen" alt="@producto.NombreProducto">
-                                }
-                                else
-                                {
-                                    <span class="LenProducto-SinImagen">
-                                        <i class="bi bi-image" aria-hidden="true"></i>
-                                        Imagen del producto
-                                    </span>
-                                }
-                            </a>
-                            <div>
-                                <span class="LenProducto-Meta">@producto.NombreCategoria</span>
-                                <h3 class="LenProducto-Nombre"><a href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto">@producto.NombreProducto</a></h3>
-                                <span class="LenPrecio">@FormatoMoneda.Colones(producto.Precio)</span>
-                                <div class="LenProducto-Acciones">
-                                    @if (producto.Disponible)
-                                    {
-                                        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno" data-idproducto="@producto.IdProducto">
-                                            <i class="bi bi-bag-plus" aria-hidden="true"></i> Agregar
-                                        </button>
-                                    }
-                                    <a class="LenBoton LenBoton--Texto LenBoton--Pequeno" href="/Publico/ProductoDetalle?idProducto=@producto.IdProducto">Ver</a>
-                                </div>
-                            </div>
-                        </article>
+                        <partial name="_TarjetaProducto" model="@TarjetaProductoViewModel.Desde(producto, VarianteTarjeta.Portada)" />
                     </div>
                 }
             </div>
         }
         else
         {
-            <div class="LenVacio mt-4">
-                <p class="LenVacio-Titulo">No hay productos disponibles por el momento.</p>
-                <p class="LenVacio-Texto">Vuelva pronto para descubrir nuestros accesorios.</p>
-            </div>
+            <partial name="_Vacio" model="@(new VacioViewModel {
+                Titulo = "No hay productos disponibles por el momento.",
+                Texto = "Vuelva pronto para descubrir nuestros accesorios.",
+                Clases = "mt-4" })" />
         }
     </div>
 </section>

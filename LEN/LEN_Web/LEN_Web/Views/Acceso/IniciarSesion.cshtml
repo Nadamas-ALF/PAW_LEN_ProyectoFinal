@@ -18,11 +18,11 @@ Todavia no hay accion POST en AccesoController, falta conectar el login contra L
 
         @if (TempData["MensajeExito"] is string mensajeExito)
         {
-            <div class="LenAviso LenAviso--Exito alert fade show mb-4" role="status">
-                <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-check-circle"></i></span>
-                <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">@mensajeExito</p></div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
+            <partial name="_Aviso" model="@(new AvisoViewModel {
+                Titulo = mensajeExito,
+                Variante = VarianteAviso.Exito,
+                Cerrable = true,
+                Clases = "mb-4" })" />
         }
 
         <form method="post" action="/Acceso/IniciarSesion" novalidate>
@@ -30,10 +30,10 @@ Todavia no hay accion POST en AccesoController, falta conectar el login contra L
 
             @if (!ViewData.ModelState.IsValid)
             {
-                <div class="LenAviso LenAviso--Error mb-4" role="alert">
-                    <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-x-circle"></i></span>
-                    <div class="LenAviso-Cuerpo"><p class="LenAviso-Titulo mb-0">El correo o la contrase&ntilde;a no son correctos.</p></div>
-                </div>
+                <partial name="_Aviso" model="@(new AvisoViewModel {
+                    Titulo = "El correo o la contrase&ntilde;a no son correctos.",
+                    Variante = VarianteAviso.Error,
+                    Clases = "mb-4" })" />
             }
 
             <div class="mb-3">
