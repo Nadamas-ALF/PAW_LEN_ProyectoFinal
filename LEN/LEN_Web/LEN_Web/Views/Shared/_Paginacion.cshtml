@@ -1,0 +1,45 @@
+@*
+Paginacion. Sale en 7 pantallas: Catalogo MisPedidos Productos Pedidos Pagos Facturas y Usuarios
+Cada enlace arrastra los filtros de la pantalla o se pierde la busqueda al cambiar de pagina
+Anterior y Siguiente se deshabilitan en la primera y en la ultima
+Con una sola pagina no se pinta nada
+*@
+@model PaginacionViewModel
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav class="mt-5" aria-label="Paginaci&oacute;n">
+        <ul class="LenPaginacion">
+
+            @if (Model.PaginaActual > 1)
+            {
+                <li><a href="@Model.UrlDe(Model.PaginaActual - 1)">Anterior</a></li>
+            }
+            else
+            {
+                <li><span aria-disabled="true">Anterior</span></li>
+            }
+
+            @foreach (var pagina in Model.PaginasVisibles())
+            {
+                if (pagina == Model.PaginaActual)
+                {
+                    <li><a href="@Model.UrlDe(pagina)" aria-current="page">@pagina</a></li>
+                }
+                else
+                {
+                    <li><a href="@Model.UrlDe(pagina)">@pagina</a></li>
+                }
+            }
+
+            @if (Model.PaginaActual < Model.TotalPaginas)
+            {
+                <li><a href="@Model.UrlDe(Model.PaginaActual + 1)">Siguiente</a></li>
+            }
+            else
+            {
+                <li><span aria-disabled="true">Siguiente</span></li>
+            }
+        </ul>
+    </nav>
+}

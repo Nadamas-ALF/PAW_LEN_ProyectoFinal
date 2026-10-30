@@ -12,7 +12,8 @@ El corazon y el Quitar son formularios POST porque cambian el favorito en la bas
 
 <article class="LenProducto @(Model.Disponible ? null : "LenProducto--Agotado")">
 
-    @if (Model.Variante == VarianteTarjeta.Catalogo)
+    @* El corazon solo aparece con la sesion abierta: sin usuario no hay a quien guardarle el favorito *@
+    @if (Model.Variante == VarianteTarjeta.Catalogo && User.Identity!.IsAuthenticated)
     {
         <form method="post" action="@(Model.EsFavorito ? "/Favorito/Eliminar" : "/Favorito/Agregar")" class="LenProducto-Favorito">
             @Html.AntiForgeryToken()
