@@ -1,0 +1,141 @@
+@*
+Bandeja de pedidos. Origen Admin/Pedidos.html. Layout _LayoutAdmin. Solo Administrador
+Datos de ListadoPedidosAdminViewModel mientras no exista SP_Pedido_Listar
+El panel ve los pedidos de todos los clientes, no los de una cuenta
+Aca sale el nombre de TB_ESTADO_PEDIDO, no la palabra que lee el cliente
+Sin factura la columna dice Pedido # mas el Id, y eso lo arma el modelo
+*@
+@model ListadoPedidosAdminViewModel
+@{
+    ViewData["Titulo"] = "Pedidos";
+
+    var filtros = new Dictionary<string, string?>
+    {
+        ["busqueda"] = Model.Busqueda,
+        ["idEstado"] = Model.IdEstado?.ToString(),
+        ["fechaInicio"] = Model.FechaInicio,
+        ["fechaFin"] = Model.FechaFin,
+    };
+
+    var culturaLocal = new System.Globalization.CultureInfo("es-CR");
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Gesti&oacute;n de pedidos",
+    Texto = "Preparaci&oacute;n y seguimiento de las ventas de la tienda." })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+
+<form method="get" asp-controller="Admin" asp-action="Pedidos" class="LenFiltros mb-4">
+    <div class="LenFiltros-Principal">
+        <label class="LenEtiqueta" for="Busqueda">Buscar</label>
+        <input type="text" class="LenCampo" id="Busqueda" name="busqueda"
+               value="@Model.Busqueda" placeholder="Cliente, correo o factura">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="IdEstado">Estado</label>
+        <select class="LenCampo" id="IdEstado" name="idEstado">
+            <option value="">Todos</option>
+            @foreach (var estado in Model.Estados)
+            {
+                <option value="@estado.IdEstadoPedido"
+                        selected="@(estado.IdEstadoPedido == Model.IdEstado)">@Html.Raw(estado.Nombre)</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaInicio">Desde</label>
+        <input type="date" class="LenCampo" id="FechaInicio" name="fechaInicio" value="@Model.FechaInicio">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaFin">Hasta</label>
+        <input type="date" class="LenCampo" id="FechaFin" name="fechaFin" value="@Model.FechaFin">
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">
+        <i class="bi bi-search" aria-hidden="true"></i> Filtrar
+    </button>
+</form>
+
+
+@if (Model.Pedidos.Count > 0)
+{
+    <div class="LenPanel LenTabla-Envoltura p-0">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Factura</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col" class="text-center">Productos</th>
+                    <th scope="col" class="LenTabla-Numero">Total</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pedido in Model.Pedidos)
+                {
+                    <tr>
+                        <td><strong>@pedido.FacturaVisible</strong></td>
+                        <td>
+                            @pedido.NombreCliente<br>
+                            <small class="LenSuave">@pedido.CorreoCliente</small>
+                        </td>
+                        <td>@pedido.FechaPedido.ToString("dd/MM/yyyy hh:mm tt", culturaLocal)</td>
+                        <td class="text-center">@pedido.CantidadProductos</td>
+                        <td class="LenTabla-Numero">@FormatoMoneda.Colones(pedido.Total)</td>
+                        <td class="text-center">
+                            <partial name="_InsigniaEstado" model="@(new InsigniaEstadoViewModel {
+                                Etiqueta = pedido.NombreEstado,
+                                ClaseCss = pedido.ClaseCssEstado })" />
+                        </td>
+                        <td>
+                            <div class="LenTabla-Acciones">
+                                <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                   asp-controller="Admin" asp-action="PedidoDetalle"
+                                   asp-route-idPedido="@pedido.IdPedido">Ver detalle</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="@(new PaginacionViewModel {
+        PaginaActual = Model.PaginaActual,
+        TotalPaginas = Model.TotalPaginas,
+        Ruta = "/Admin/Pedidos",
+        Filtros = filtros })" />
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "No se encontraron pedidos",
+        Texto = "Ajuste los filtros de b&uacute;squeda.",
+        Clases = "mt-4" })" />
+}

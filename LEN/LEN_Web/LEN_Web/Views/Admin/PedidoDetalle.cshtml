@@ -1,0 +1,214 @@
+@*
+Detalle del pedido en el panel. Origen Admin/PedidoDetalle.html. Layout _LayoutAdmin
+Unica pantalla donde se cambia el estado de un pedido. Solo Administrador
+Datos de DetallePedidoAdminViewModel mientras no exista SP_Pedido_ObtenerDetalleAdministracion
+El selector ofrece solo los estados validos desde el actual, que calcula el modelo
+Cancelar devuelve stock y anula pago y factura, y no se puede deshacer
+*@
+@model DetallePedidoAdminViewModel
+@{
+    ViewData["Titulo"] = Html.Encode(Model.FacturaVisible);
+    var culturaLocal = new System.Globalization.CultureInfo("es-CR");
+    var fechaLarga = Model.FechaPedido.ToString("dd/MM/yyyy hh:mm tt", culturaLocal);
+}
+
+<partial name="_Migas" model="@(new List<MigaViewModel> {
+    new() { Texto = "Principal", Url = Url.Action("Tablero", "Admin") },
+    new() { Texto = "Pedidos", Url = Url.Action("Pedidos", "Admin") },
+    new() { Texto = Html.Encode(Model.FacturaVisible) },
+})" />
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = $"Pedido {Html.Encode(Model.FacturaVisible)}",
+    Texto = $"Realizado el {fechaLarga}",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Volver a pedidos",
+            Icono = "arrow-left",
+            Url = Url.Action("Pedidos", "Admin") },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<div class="row g-4">
+
+    <div class="col-12 col-lg-8">
+
+        <article class="LenPanel p-0 mb-4">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Productos del pedido</h2></div>
+            <div class="LenTabla-Envoltura">
+                <table class="LenTabla LenTabla--Angosta">
+                    <thead>
+                        <tr>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-center">Cantidad</th>
+                            <th scope="col" class="LenTabla-Numero">Precio unitario</th>
+                            <th scope="col" class="LenTabla-Numero">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @* El precio y el nombre son los congelados al comprar *@
+                        @foreach (var linea in Model.Lineas)
+                        {
+                            <tr>
+                                <td>@linea.NombreProducto</td>
+                                <td class="text-center">@linea.Cantidad</td>
+                                <td class="LenTabla-Numero">@FormatoMoneda.Colones(linea.PrecioUnitario)</td>
+                                <td class="LenTabla-Numero">@FormatoMoneda.Colones(linea.SubtotalLinea)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="LenTabla-Numero LenSuave">Subtotal</td>
+                            <td class="LenTabla-Numero">@FormatoMoneda.Colones(Model.Subtotal)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="LenTabla-Numero LenSuave">Costo de env&iacute;o</td>
+                            <td class="LenTabla-Numero">@FormatoMoneda.Colones(Model.CostoEnvio)</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="LenTabla-Numero"><strong>Total</strong></td>
+                            <td class="LenTabla-Numero"><strong>@FormatoMoneda.Colones(Model.Total)</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </article>
+
+
+        <article class="LenPanel p-0">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Datos del cliente y env&iacute;o</h2></div>
+            <dl class="LenDatos p-3 m-0">
+                <dt>Cliente</dt>
+                <dd>
+                    @Model.NombreCliente<br>
+                    <small class="LenSuave">@Model.CorreoCliente</small>
+                    @if (!string.IsNullOrWhiteSpace(Model.TelefonoCliente))
+                    {
+                        <br>
+                        <small class="LenSuave">Tel: @Model.TelefonoCliente</small>
+                    }
+                </dd>
+
+                @* El destinatario puede ser otra persona que el cliente *@
+                <dt>Destinatario</dt>
+                <dd>
+                    @Model.Direccion.NombreDestinatario<br>
+                    <small class="LenSuave">Tel: @Model.Direccion.TelefonoContacto</small>
+                </dd>
+
+                <dt>Direcci&oacute;n de env&iacute;o</dt>
+                <dd>
+                    @Model.Direccion.DireccionExacta, @Model.Direccion.Ubicacion
+                    @if (!string.IsNullOrWhiteSpace(Model.Direccion.Referencia))
+                    {
+                        <br>
+                        <small class="LenSuave">Referencia: @Model.Direccion.Referencia</small>
+                    }
+                </dd>
+
+                <dt>M&eacute;todo de pago</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.NombreMetodoPago) ? "No registrado" : Model.NombreMetodoPago)</dd>
+
+                <dt>Comprobante simulado</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Model.ComprobantePago) ? "No registrado" : Model.ComprobantePago)</dd>
+            </dl>
+        </article>
+    </div>
+
+
+    <div class="col-12 col-lg-4">
+
+        <article class="LenPanel p-0">
+            <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Estado del pedido</h2></div>
+            <div class="p-3">
+                <p>
+                    Estado actual:
+                    <partial name="_InsigniaEstado" model="@(new InsigniaEstadoViewModel {
+                        Etiqueta = Model.NombreEstado,
+                        ClaseCss = Model.ClaseCssEstado })" />
+                </p>
+
+                @if (Model.IdEstadoPedido == 4 && !string.IsNullOrWhiteSpace(Model.MotivoCancelacion))
+                {
+                    <partial name="_Aviso" model="@(new AvisoViewModel {
+                        Titulo = "Motivo de cancelaci&oacute;n:",
+                        Cuerpo = Html.Encode(Model.MotivoCancelacion),
+                        Variante = VarianteAviso.Error,
+                        Clases = "mb-3" })" />
+                }
+
+                @if (Model.PuedeCambiarEstado)
+                {
+                    <form method="post" action="/PedidoAdmin/CambiarEstado">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.IdPedido">
+
+                        <div class="mb-3">
+                            <label class="LenEtiqueta" for="IdEstadoNuevo">Nuevo estado</label>
+                            <select class="LenCampo" id="IdEstadoNuevo" name="idEstadoNuevo" required>
+                                <option value="">Seleccione un estado</option>
+                                @foreach (var estado in Model.EstadosSiguientes)
+                                {
+                                    <option value="@estado.IdEstadoPedido">@Html.Raw(estado.Nombre)</option>
+                                }
+                            </select>
+                        </div>
+
+                        @* Nace oculto y lo muestra len.js al elegir Cancelado. El
+                           motivo es obligatorio en el procedimiento *@
+                        <div class="mb-3" hidden>
+                            <label class="LenEtiqueta" for="MotivoCancelacion">Motivo de la cancelaci&oacute;n</label>
+                            <textarea class="LenCampo" id="MotivoCancelacion"
+                                      name="motivoCancelacion" rows="3" maxlength="255"
+                                      placeholder="Indique el motivo"></textarea>
+                            <span class="LenAyuda">
+                                Al cancelar se devuelve el stock de los productos al
+                                inventario, y el pago y la factura quedan anulados.
+                                No se puede deshacer.
+                            </span>
+                        </div>
+
+                        <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">Actualizar estado</button>
+                    </form>
+                }
+                else
+                {
+                    <p class="LenAyuda mt-3">Este pedido ya no admite cambios de estado.</p>
+                }
+            </div>
+        </article>
+
+
+        @* Pendiente de verdad: sale de TB_BITACORA y falta el procedimiento *@
+        <article class="LenPanel p-0 mt-4">
+            <div class="LenPanel-Cabecera">
+                <h2 class="LenPanel-Titulo">
+                    Historial de cambios <span class="LenBadge LenBadge--Neutro ms-1">Pendiente</span>
+                </h2>
+            </div>
+            <p class="LenAyuda p-3 m-0">
+                Sale de TB_BITACORA filtrando por Entidad = TB_PEDIDO e
+                IdRegistro = este pedido. Falta el procedimiento de
+                consulta y la pantalla.
+            </p>
+        </article>
+    </div>
+</div>

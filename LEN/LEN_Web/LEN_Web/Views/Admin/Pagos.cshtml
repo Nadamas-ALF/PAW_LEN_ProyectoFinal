@@ -1,0 +1,190 @@
+@*
+Administracion de pagos. Origen Admin/Pagos.html. Layout _LayoutAdmin. Solo Administrador
+Solo consulta: los pagos los crea el checkout y los anula la cancelacion del pedido
+Datos de ListadoPagosViewModel mientras no existan SP_Pago_ConsultarResumen ni SP_Pago_Listar
+Los cuatro indicadores miran toda la historia, no la pagina ni el filtro
+Aca los indicadores no llevan icono, a diferencia de los del tablero
+*@
+@model ListadoPagosViewModel
+@{
+    ViewData["Titulo"] = "Pagos";
+
+    var filtros = new Dictionary<string, string?>
+    {
+        ["busqueda"] = Model.Busqueda,
+        ["idEstadoPago"] = Model.IdEstadoPago?.ToString(),
+        ["fechaInicio"] = Model.FechaInicio,
+        ["fechaFin"] = Model.FechaFin,
+    };
+
+    var culturaLocal = new System.Globalization.CultureInfo("es-CR");
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Administraci&oacute;n de pagos",
+    Texto = "Pagos simulados registrados por la tienda. Solo consulta." })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Error,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+
+<section class="row g-4 mb-4" aria-label="Indicadores de pagos">
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Pagos registrados",
+            Valor = Model.TotalPagos.ToString() })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Total recaudado",
+            Valor = FormatoMoneda.ColonesSinDecimales(Model.TotalRecaudado) })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Pagos de hoy",
+            Valor = Model.PagosHoy.ToString(),
+            Pie = $"{FormatoMoneda.ColonesSinDecimales(Model.RecaudadoHoy)} recaudados" })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Pagos anulados",
+            Valor = Model.PagosAnulados.ToString(),
+            Pie = "Por pedidos cancelados" })" />
+    </div>
+</section>
+
+
+<form method="get" asp-controller="Admin" asp-action="Pagos" class="LenFiltros mb-4">
+    <div class="LenFiltros-Principal">
+        <label class="LenEtiqueta" for="Busqueda">Buscar</label>
+        <div class="LenCampoGrupo">
+            <span class="LenCampoGrupo-Prefijo"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input type="search" class="LenCampo" id="Busqueda" name="busqueda"
+                   value="@Model.Busqueda" placeholder="Cliente, correo, comprobante o factura"
+                   autocomplete="off">
+        </div>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="IdEstadoPago">Estado</label>
+        <select class="LenCampo" id="IdEstadoPago" name="idEstadoPago">
+            <option value="">Todos</option>
+            @foreach (var estado in DatosEjemplo.EstadosPago())
+            {
+                <option value="@estado.Id" selected="@(estado.Id == Model.IdEstadoPago)">@estado.Nombre</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaInicio">Desde</label>
+        <input type="date" class="LenCampo" id="FechaInicio" name="fechaInicio" value="@Model.FechaInicio">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaFin">Hasta</label>
+        <input type="date" class="LenCampo" id="FechaFin" name="fechaFin" value="@Model.FechaFin">
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">
+        <i class="bi bi-search" aria-hidden="true"></i> Filtrar
+    </button>
+</form>
+
+
+<div class="LenPanel p-0">
+    <div class="LenPanel-Cabecera">
+        <h2 class="LenPanel-Titulo"><i class="bi bi-credit-card" aria-hidden="true"></i> Pagos</h2>
+    </div>
+    <div class="LenTabla-Envoltura">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Pago</th>
+                    <th scope="col">Factura</th>
+                    <th scope="col">Pedido</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">M&eacute;todo</th>
+                    <th scope="col" class="LenTabla-Numero">Monto</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Comprobante</th>
+                    <th scope="col" class="text-center">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Pagos.Count > 0)
+                {
+                    @foreach (var pago in Model.Pagos)
+                    {
+                        @* El pago de un pedido cancelado queda anulado *@
+                        <tr class="@(pago.EstaAnulado ? "LenTabla-Inactiva" : null)">
+                            <td><strong>#@pago.IdPago</strong></td>
+                            <td>@pago.NumeroFactura</td>
+                            <td>
+                                <a class="LenEnlace" asp-controller="Admin" asp-action="PedidoDetalle"
+                                   asp-route-idPedido="@pago.IdPedido">#@pago.IdPedido</a>
+                            </td>
+                            <td>
+                                <strong class="d-block">@pago.NombreCliente</strong>
+                                <small class="LenSuave">@pago.CorreoCliente</small>
+                            </td>
+                            <td><span class="LenBadge LenBadge--Neutro">@pago.NombreMetodoPago</span></td>
+                            <td class="LenTabla-Numero">
+                                <strong>@FormatoMoneda.ColonesSinDecimales(pago.Monto)</strong>
+                            </td>
+                            <td>
+                                <span class="d-block">@pago.FechaPago.ToString("dd/MM/yyyy")</span>
+                                <small class="LenSuave">@pago.FechaPago.ToString("hh:mm tt", culturaLocal)</small>
+                            </td>
+                            <td><span title="@pago.Comprobante">@pago.Comprobante</span></td>
+                            <td class="text-center">
+                                @if (pago.EstaAnulado)
+                                {
+                                    <span class="LenBadge LenBadge--Negativo">@pago.NombreEstado</span>
+                                }
+                                else
+                                {
+                                    <span class="LenBadge LenBadge--Exito">
+                                        <i class="bi bi-check-circle" aria-hidden="true"></i> @pago.NombreEstado
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    @* El bloque vacio va dentro de la tabla, no despues *@
+                    <tr>
+                        <td colspan="9">
+                            <partial name="_Vacio" model="@(new VacioViewModel {
+                                Titulo = "Sin pagos",
+                                Texto = "No hay pagos registrados.",
+                                Clases = "LenVacio--Compacto" })" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_Paginacion" model="@(new PaginacionViewModel {
+    PaginaActual = Model.PaginaActual,
+    TotalPaginas = Model.TotalPaginas,
+    Ruta = "/Admin/Pagos",
+    Filtros = filtros })" />

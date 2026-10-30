@@ -320,18 +320,39 @@ namespace LEN_Web.Utilidades
 
         public const int PedidosPorPagina = 3;
 
+        // La cuenta con la que se entra mientras no hay sesion
+        private const int IdUsuarioSesion = 1;
+
+        // Solo los pedidos de la cuenta. El procedimiento recibe IdUsuario por
+        // eso mismo: el historial de uno no puede mostrar los de otro
         public static HistorialPedidosViewModel HistorialPedidos(int pagina)
         {
-            var totalPaginas = Math.Max(1, (int)Math.Ceiling(PedidosEjemplo.Count / (double)PedidosPorPagina));
+            var mios = LibroPedidos
+                .Where(pedido => pedido.IdUsuario == IdUsuarioSesion)
+                .ToList();
+
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(mios.Count / (double)PedidosPorPagina));
             var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
 
             return new HistorialPedidosViewModel
             {
                 PaginaActual = paginaSegura,
                 TotalPaginas = totalPaginas,
-                Pedidos = PedidosEjemplo
+                Pedidos = mios
                     .Skip((paginaSegura - 1) * PedidosPorPagina)
                     .Take(PedidosPorPagina)
+                    .Select(pedido => new PedidoResumen
+                    {
+                        IdPedido = pedido.Id,
+                        NumeroFactura = pedido.NumeroFactura ?? $"Pedido #{pedido.Id}",
+                        FechaPedido = pedido.Fecha,
+                        Total = TotalDe(pedido),
+                        IdEstadoPedido = pedido.IdEstado,
+                        EstadoVisible = EstadoVisibleDe(pedido.IdEstado),
+                        ClaseCssEstado = EstadosPedido()
+                            .First(estado => estado.IdEstadoPedido == pedido.IdEstado).ClaseCss,
+                        CantidadProductos = pedido.Lineas.Sum(linea => linea.Cantidad),
+                    })
                     .ToList(),
             };
         }
@@ -340,88 +361,181 @@ namespace LEN_Web.Utilidades
         // historial con aviso en lugar de mostrar el pedido de otra persona
         public static DetallePedidoViewModel? DetallePedido(IWebHostEnvironment entorno, int idPedido)
         {
-            var pedido = PedidosEjemplo.FirstOrDefault(fila => fila.IdPedido == idPedido);
+            // El procedimiento recibe IdPedido e IdUsuario los dos: sin lo
+            // segundo cualquiera veria el pedido de otro cambiando el numero
+            var pedido = LibroPedidos.FirstOrDefault(fila =>
+                fila.Id == idPedido && fila.IdUsuario == IdUsuarioSesion);
 
             if (pedido is null)
             {
                 return null;
             }
 
-            var cancelado = pedido.IdEstadoPedido == 4;
-            var lineas = LineasDe(entorno, pedido.IdPedido);
-            var subtotal = lineas.Sum(linea => linea.SubtotalLinea);
+            var cancelado = pedido.IdEstado == 4;
 
-            // El envio no es fijo: lo calcula la aplicacion segun la provincia.
-            // Se despeja del total para que las tres cifras siempre cuadren
             return new DetallePedidoViewModel
             {
-                IdPedido = pedido.IdPedido,
-                NumeroFactura = pedido.NumeroFactura,
-                FechaPedido = pedido.FechaPedido,
-                Subtotal = subtotal,
-                CostoEnvio = pedido.Total - subtotal,
-                Total = pedido.Total,
-                IdEstadoPedido = pedido.IdEstadoPedido,
-                EstadoVisible = pedido.EstadoVisible,
-                ClaseCssEstado = pedido.ClaseCssEstado,
+                IdPedido = pedido.Id,
+                NumeroFactura = pedido.NumeroFactura ?? $"Pedido #{pedido.Id}",
+                FechaPedido = pedido.Fecha,
+                Subtotal = SubtotalDe(pedido),
+                CostoEnvio = pedido.CostoEnvio,
+                Total = TotalDe(pedido),
+                IdEstadoPedido = pedido.IdEstado,
+                EstadoVisible = EstadoVisibleDe(pedido.IdEstado),
+                ClaseCssEstado = EstadosPedido()
+                    .First(estado => estado.IdEstadoPedido == pedido.IdEstado).ClaseCss,
                 MotivoCancelacion = cancelado ? "el cliente pidio la cancelacion." : null,
                 Direccion = Direcciones()[0],
-                NombreMetodoPago = "Tarjeta",
-                ComprobantePago = "4242",
-                FechaPago = pedido.FechaPedido,
+                NombreMetodoPago = MetodoDe(pedido),
+                ComprobantePago = pedido.Comprobante,
+                FechaPago = pedido.Fecha,
                 EstadoPago = cancelado ? "Anulado" : "Pagado",
                 ClaseCssEstadoPago = cancelado ? "LenBadge--Negativo" : "LenBadge--Exito",
-                Lineas = lineas,
+                Lineas = LineasDe(entorno, pedido),
             };
         }
 
-        // Las unidades de cada uno suman su CantidadProductos del historial
-        private static List<LineaPedido> LineasDe(IWebHostEnvironment entorno, int idPedido) => idPedido switch
+        // Las unidades de cada linea suman el CantidadProductos del historial
+        private static List<LineaPedido> LineasDe(IWebHostEnvironment entorno, PedidoEjemplo pedido) =>
+            pedido.Lineas
+                .Select(linea => LineaPedidoDe(entorno, linea.IdProducto, linea.Cantidad))
+                .ToList();
+
+        // ----------------------------------------------------------------
+        // El libro de pedidos
+        // ----------------------------------------------------------------
+        //
+        // Una sola lista, y de ella salen seis pantallas: el historial y el
+        // detalle del cliente, la bandeja y el detalle del panel, los pagos y
+        // las facturas. El total de un pedido es el mismo numero en las seis
+        // porque se calcula de sus lineas, no se escribe.
+        //
+        // El FAC-000012 vale 25 000 aqui y en la confirmacion de compra, que es
+        // el invariante que pide el LEEME de la plantilla. Los cuatro estados de
+        // TB_ESTADO_PEDIDO estan representados para ver los cuatro colores, y
+        // hay tres clientes para que la bandeja del panel no sea de uno solo.
+
+        private record PedidoEjemplo(
+            int Id,
+            string? NumeroFactura,
+            DateTime Fecha,
+            int IdUsuario,
+            int IdEstado,
+            decimal CostoEnvio,
+            int IdMetodoPago,
+            string? Comprobante,
+            (int IdProducto, int Cantidad)[] Lineas);
+
+        private static readonly PedidoEjemplo[] LibroPedidos =
+        [
+            new(12, "FAC-000012", new DateTime(2026, 9, 20, 15, 42, 0), 1, 2, 2500m, 1, "4242",
+                [(1, 2), (3, 1)]),
+
+            new(11, "FAC-000011", new DateTime(2026, 9, 19, 11, 8, 0), 2, 1, 3500m, 3, "8888-0002",
+                [(10, 1)]),
+
+            new(10, "FAC-000010", new DateTime(2026, 9, 10, 14, 20, 0), 3, 3, 2400m, 2, "000123456",
+                [(5, 1), (8, 1)]),
+
+            // Trae el Collar Pato, que esta dado de baja: una baja no borra lo
+            // que ya se vendio
+            new(9, "FAC-000009", new DateTime(2026, 9, 2, 10, 15, 0), 1, 3, 2000m, 4, "SIM-000009",
+                [(2, 1), (5, 1)]),
+
+            new(7, "FAC-000007", new DateTime(2026, 8, 27, 9, 5, 0), 1, 1, 1500m, 1, "1881",
+                [(3, 1)]),
+
+            new(5, "FAC-000005", new DateTime(2026, 8, 18, 16, 30, 0), 1, 4, 2000m, 2, "000123456",
+                [(4, 1)]),
+        ];
+
+        // Cada cliente con su direccion de envio. Sin esto el detalle de un
+        // pedido de Luis mostraria a Ana como destinataria
+        private record ClienteEjemplo(
+            int Id,
+            string Nombre,
+            string Correo,
+            string? Telefono,
+            string? Cedula,
+            string DireccionExacta,
+            string Distrito,
+            string Canton,
+            string? Referencia);
+
+        private static readonly ClienteEjemplo[] ClientesEjemplo =
+        [
+            // Los datos de Ana son los mismos de Direcciones()[0], que es lo que
+            // usan el checkout y MiCuenta
+            new(1, "Ana Mora Jimenez", "ana.mora@example.com", "8888-0001", "118880001",
+                "200 m sur de la escuela, casa verde", "Carmen", "San Jose",
+                "porton negro, frente al parque"),
+
+            new(2, "Luis Castro Pineda", "luis.castro@example.com", "8888-0002", null,
+                "Oficentro La Sabana, edificio 4, piso 2", "Mata Redonda", "San Jose", null),
+
+            // Sin referencia: es opcional y conviene ver el caso
+            new(3, "Sofia Ramirez Leon", "sofia.ramirez@example.com", "8888-0003", "207770003",
+                "Residencial Los Robles, casa 14", "Escazu", "Escazu", null),
+        ];
+
+        private static DireccionEnvio DireccionDe(ClienteEjemplo cliente) => new()
         {
-            12 => [LineaPedidoDe(entorno, 1, 2), LineaPedidoDe(entorno, 3, 1)],
-            9 => [LineaPedidoDe(entorno, 2, 1), LineaPedidoDe(entorno, 5, 1)],
-            7 => [LineaPedidoDe(entorno, 3, 1)],
-            _ => [LineaPedidoDe(entorno, 4, 1)],
+            NombreDestinatario = cliente.Nombre,
+            DireccionExacta = cliente.DireccionExacta,
+            Referencia = cliente.Referencia,
+            Distrito = cliente.Distrito,
+            Canton = cliente.Canton,
+            Provincia = "San Jose",
+            TelefonoContacto = cliente.Telefono,
         };
 
-        // El FAC-000012 vale 25 000 aqui, en su detalle, en la confirmacion, en
-        // la factura y en los pagos del panel. Los cuatro estados de
-        // TB_ESTADO_PEDIDO estan representados para ver los cuatro colores
-        private static readonly List<PedidoResumen> PedidosEjemplo =
+        // Los cuatro de TB_ESTADO_PEDIDO con el nombre que ve el panel
+        public static List<EstadoPedidoOpcion> EstadosPedido() =>
         [
-            new()
-            {
-                IdPedido = 12, NumeroFactura = "FAC-000012",
-                FechaPedido = new DateTime(2026, 9, 20, 15, 42, 0),
-                Total = 25000m, CantidadProductos = 3,
-                IdEstadoPedido = 2, EstadoVisible = "En camino",
-                ClaseCssEstado = "estado-pedido-preparacion",
-            },
-            new()
-            {
-                IdPedido = 9, NumeroFactura = "FAC-000009",
-                FechaPedido = new DateTime(2026, 9, 2, 10, 15, 0),
-                Total = 12800m, CantidadProductos = 2,
-                IdEstadoPedido = 3, EstadoVisible = "Recibido",
-                ClaseCssEstado = "estado-pedido-entregado",
-            },
-            new()
-            {
-                IdPedido = 7, NumeroFactura = "FAC-000007",
-                FechaPedido = new DateTime(2026, 8, 27, 9, 5, 0),
-                Total = 7000m, CantidadProductos = 1,
-                IdEstadoPedido = 1, EstadoVisible = "Comprada",
-                ClaseCssEstado = "estado-pedido-pagado",
-            },
-            new()
-            {
-                IdPedido = 5, NumeroFactura = "FAC-000005",
-                FechaPedido = new DateTime(2026, 8, 18, 16, 30, 0),
-                Total = 4500m, CantidadProductos = 1,
-                IdEstadoPedido = 4, EstadoVisible = "Cancelado",
-                ClaseCssEstado = "estado-pedido-cancelado",
-            },
+            new() { IdEstadoPedido = 1, Nombre = "Pagado", ClaseCss = "estado-pedido-pagado" },
+            new() { IdEstadoPedido = 2, Nombre = "En preparaci&oacute;n", ClaseCss = "estado-pedido-preparacion" },
+            new() { IdEstadoPedido = 3, Nombre = "Entregado", ClaseCss = "estado-pedido-entregado" },
+            new() { IdEstadoPedido = 4, Nombre = "Cancelado", ClaseCss = "estado-pedido-cancelado" },
         ];
+
+        // Lo que el cliente lee en lugar del nombre del estado
+        private static string EstadoVisibleDe(int idEstado) => idEstado switch
+        {
+            1 => "Comprada",
+            2 => "En camino",
+            3 => "Recibido",
+            _ => "Cancelado",
+        };
+
+        // Las transiciones que admite SP_Pedido_CambiarEstado. Entregado y
+        // Cancelado son finales y devuelven lista vacia, y con eso la pantalla
+        // esconde el formulario entero
+        private static List<EstadoPedidoOpcion> EstadosSiguientesDe(int idEstado)
+        {
+            var validos = idEstado switch
+            {
+                1 => new[] { 2, 4 },
+                2 => new[] { 3, 4 },
+                _ => [],
+            };
+
+            return EstadosPedido()
+                .Where(estado => validos.Contains(estado.IdEstadoPedido))
+                .ToList();
+        }
+
+        private static decimal SubtotalDe(PedidoEjemplo pedido) =>
+            pedido.Lineas.Sum(linea =>
+                Catalogo.First(fila => fila.Id == linea.IdProducto).Precio * linea.Cantidad);
+
+        private static decimal TotalDe(PedidoEjemplo pedido) => SubtotalDe(pedido) + pedido.CostoEnvio;
+
+        private static ClienteEjemplo ClienteDe(PedidoEjemplo pedido) =>
+            ClientesEjemplo.First(cliente => cliente.Id == pedido.IdUsuario);
+
+        private static string MetodoDe(PedidoEjemplo pedido) =>
+            MetodosPago().First(metodo => metodo.IdMetodoPago == pedido.IdMetodoPago).Nombre;
 
         // Los cuatro que carga 02_catalogos.sql
         public static List<MetodoPago> MetodosPago() =>
@@ -466,8 +580,14 @@ namespace LEN_Web.Utilidades
         // Panel: tablero
         // ----------------------------------------------------------------
 
-        // Las ventas y los pedidos del tablero son de toda la tienda, no de una
-        // cuenta: por eso no cuadran con los cuatro pedidos del historial de Ana
+        // Agregados de toda la tienda. El libro de pedidos tiene solo los seis
+        // que las tablas muestran en detalle, asi que estas cifras no salen de
+        // ahi: son el resumen de una historia mas larga. Viven aca y no en cada
+        // pantalla para que el tablero y los pagos no se contradigan
+        public const int TotalPedidosHistoricos = 37;
+
+        public const int PedidosCanceladosHistoricos = 4;
+
         public static TableroViewModel Tablero()
         {
             var ventas = VentasDelAnio();
@@ -475,7 +595,7 @@ namespace LEN_Web.Utilidades
             return new TableroViewModel
             {
                 TotalVentas = ventas.Sum(venta => venta.Total),
-                TotalPedidos = 37,
+                TotalPedidos = TotalPedidosHistoricos,
                 PedidosPorPreparar = 8,
                 TotalClientesActivos = 18,
                 TotalProductosAgotados = Catalogo.Count(producto => producto.Activo && producto.Stock == 0),
@@ -709,6 +829,343 @@ namespace LEN_Web.Utilidades
             Activo = producto.Activo,
             RutaImagen = producto.Archivos.Length == 0 ? null : Imagen(entorno, producto.Archivos[0]),
         };
+
+        // ----------------------------------------------------------------
+        // Panel: pedidos
+        // ----------------------------------------------------------------
+
+        public const int PedidosAdminPorPagina = 5;
+
+        public static ListadoPedidosAdminViewModel PedidosAdmin(
+            string? busqueda,
+            int? idEstado,
+            string? fechaInicio,
+            string? fechaFin,
+            int pagina)
+        {
+            // El panel ve los de todos los clientes, no los de una cuenta
+            var encontrados = LibroPedidos.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                var texto = busqueda.Trim();
+                encontrados = encontrados.Where(pedido =>
+                    (pedido.NumeroFactura ?? string.Empty).Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || ClienteDe(pedido).Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || ClienteDe(pedido).Correo.Contains(texto, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (idEstado.HasValue)
+            {
+                encontrados = encontrados.Where(pedido => pedido.IdEstado == idEstado.Value);
+            }
+
+            encontrados = EntreFechas(encontrados, pedido => pedido.Fecha, fechaInicio, fechaFin);
+
+            var lista = encontrados.ToList();
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PedidosAdminPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+
+            return new ListadoPedidosAdminViewModel
+            {
+                Busqueda = busqueda,
+                IdEstado = idEstado,
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+                Estados = EstadosPedido(),
+                Pedidos = lista
+                    .Skip((paginaSegura - 1) * PedidosAdminPorPagina)
+                    .Take(PedidosAdminPorPagina)
+                    .Select(pedido => new PedidoAdminResumen
+                    {
+                        IdPedido = pedido.Id,
+                        NumeroFactura = pedido.NumeroFactura,
+                        FechaPedido = pedido.Fecha,
+                        Total = TotalDe(pedido),
+                        IdEstadoPedido = pedido.IdEstado,
+                        NombreEstado = EstadosPedido()
+                            .First(estado => estado.IdEstadoPedido == pedido.IdEstado).Nombre,
+                        ClaseCssEstado = EstadosPedido()
+                            .First(estado => estado.IdEstadoPedido == pedido.IdEstado).ClaseCss,
+                        IdUsuario = pedido.IdUsuario,
+                        NombreCliente = ClienteDe(pedido).Nombre,
+                        CorreoCliente = ClienteDe(pedido).Correo,
+                        NombreMetodoPago = MetodoDe(pedido),
+                        CantidadProductos = pedido.Lineas.Sum(linea => linea.Cantidad),
+                    })
+                    .ToList(),
+            };
+        }
+
+        // Null si el pedido no existe. Aca no se filtra por usuario: el
+        // administrador ve cualquier pedido, y por eso el procedimiento de
+        // administracion no recibe IdUsuario
+        public static DetallePedidoAdminViewModel? DetallePedidoAdmin(IWebHostEnvironment entorno, int idPedido)
+        {
+            var pedido = LibroPedidos.FirstOrDefault(fila => fila.Id == idPedido);
+
+            if (pedido is null)
+            {
+                return null;
+            }
+
+            var cliente = ClienteDe(pedido);
+            var estado = EstadosPedido().First(fila => fila.IdEstadoPedido == pedido.IdEstado);
+
+            return new DetallePedidoAdminViewModel
+            {
+                IdPedido = pedido.Id,
+                NumeroFactura = pedido.NumeroFactura,
+                FechaPedido = pedido.Fecha,
+                Subtotal = SubtotalDe(pedido),
+                CostoEnvio = pedido.CostoEnvio,
+                Total = TotalDe(pedido),
+                IdEstadoPedido = pedido.IdEstado,
+                NombreEstado = estado.Nombre,
+                ClaseCssEstado = estado.ClaseCss,
+                MotivoCancelacion = pedido.IdEstado == 4 ? "El cliente pidio la cancelacion." : null,
+                NombreCliente = cliente.Nombre,
+                CorreoCliente = cliente.Correo,
+                TelefonoCliente = cliente.Telefono,
+                Direccion = DireccionDe(cliente),
+                NombreMetodoPago = MetodoDe(pedido),
+                ComprobantePago = pedido.Comprobante,
+                Lineas = LineasDe(entorno, pedido),
+                EstadosSiguientes = EstadosSiguientesDe(pedido.IdEstado),
+            };
+        }
+
+        // ----------------------------------------------------------------
+        // Panel: pagos
+        // ----------------------------------------------------------------
+
+        public const int PagosPorPagina = 5;
+
+        public static ListadoPagosViewModel Pagos(
+            string? busqueda,
+            int? idEstadoPago,
+            string? fechaInicio,
+            string? fechaFin,
+            int pagina)
+        {
+            var todos = LibroPedidos.Select(PagoDe).ToList();
+            var encontrados = todos.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                var texto = busqueda.Trim();
+                encontrados = encontrados.Where(pago =>
+                    pago.NombreCliente.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || pago.CorreoCliente.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || (pago.Comprobante ?? string.Empty).Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || (pago.NumeroFactura ?? string.Empty).Contains(texto, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (idEstadoPago.HasValue)
+            {
+                encontrados = encontrados.Where(pago => pago.IdEstadoPago == idEstadoPago.Value);
+            }
+
+            encontrados = EntreFechas(encontrados, pago => pago.FechaPago, fechaInicio, fechaFin);
+
+            var lista = encontrados.ToList();
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)PagosPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+            var hoy = DateTime.Today;
+
+            return new ListadoPagosViewModel
+            {
+                Busqueda = busqueda,
+                IdEstadoPago = idEstadoPago,
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+
+                // Los indicadores miran toda la historia, no la pagina abierta
+                // ni el filtro: si no, cambiarian al paginar. Salen del mismo
+                // agregado que el tablero, para que las dos pantallas no digan
+                // cifras distintas de lo mismo
+                TotalPagos = TotalPedidosHistoricos + PedidosCanceladosHistoricos,
+                TotalRecaudado = VentasDelAnio().Sum(venta => venta.Total),
+                PagosAnulados = PedidosCanceladosHistoricos,
+
+                // Estos dos si son una comparacion de fecha real, no un
+                // agregado: con los pedidos de ejemplo no hay ninguno de hoy
+                PagosHoy = todos.Count(pago => pago.FechaPago.Date == hoy),
+                RecaudadoHoy = todos
+                    .Where(pago => !pago.EstaAnulado && pago.FechaPago.Date == hoy)
+                    .Sum(pago => pago.Monto),
+
+                Pagos = lista
+                    .Skip((paginaSegura - 1) * PagosPorPagina)
+                    .Take(PagosPorPagina)
+                    .ToList(),
+            };
+        }
+
+        // Un pago por pedido. Cancelar el pedido anula su pago, y por eso el
+        // estado del pago no se escribe: sale del estado del pedido
+        private static PagoAdmin PagoDe(PedidoEjemplo pedido)
+        {
+            var anulado = pedido.IdEstado == 4;
+            var cliente = ClienteDe(pedido);
+
+            return new PagoAdmin
+            {
+                // El pago es otra entidad que el pedido: el numero no coincide
+                IdPago = pedido.Id + 20,
+                IdPedido = pedido.Id,
+                NumeroFactura = pedido.NumeroFactura,
+                NombreCliente = cliente.Nombre,
+                CorreoCliente = cliente.Correo,
+                NombreMetodoPago = MetodoDe(pedido),
+                Monto = TotalDe(pedido),
+                FechaPago = pedido.Fecha,
+                Comprobante = pedido.Comprobante,
+                IdEstadoPago = anulado ? 3 : 2,
+                NombreEstado = anulado ? "Anulado" : "Pagado",
+            };
+        }
+
+        // Los tres de TB_ESTADO_PAGO
+        public static List<(int Id, string Nombre)> EstadosPago() =>
+        [
+            (1, "Pendiente"),
+            (2, "Pagado"),
+            (3, "Anulado"),
+        ];
+
+        // ----------------------------------------------------------------
+        // Panel: facturas
+        // ----------------------------------------------------------------
+
+        public const int FacturasPorPagina = 5;
+
+        public static ListadoFacturasViewModel Facturas(
+            string? busqueda,
+            string? fechaInicio,
+            string? fechaFin,
+            int pagina)
+        {
+            // Solo los pedidos con factura emitida. La factura es uno a uno con
+            // el pedido por UQ_Factura_Pedido
+            var encontrados = LibroPedidos
+                .Where(pedido => pedido.NumeroFactura is not null)
+                .Select(FacturaDe);
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                var texto = busqueda.Trim();
+                encontrados = encontrados.Where(factura =>
+                    factura.NumeroFactura.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || factura.NombreCliente.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || factura.CorreoCliente.Contains(texto, StringComparison.OrdinalIgnoreCase));
+            }
+
+            encontrados = EntreFechas(encontrados, factura => factura.FechaFactura, fechaInicio, fechaFin);
+
+            var lista = encontrados.ToList();
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)FacturasPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+
+            return new ListadoFacturasViewModel
+            {
+                Busqueda = busqueda,
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+                Facturas = lista
+                    .Skip((paginaSegura - 1) * FacturasPorPagina)
+                    .Take(FacturasPorPagina)
+                    .ToList(),
+            };
+        }
+
+        public static DetalleFacturaViewModel? DetalleFactura(IWebHostEnvironment entorno, int idFactura)
+        {
+            var pedido = LibroPedidos.FirstOrDefault(fila =>
+                fila.NumeroFactura is not null && fila.Id == idFactura);
+
+            if (pedido is null)
+            {
+                return null;
+            }
+
+            var cliente = ClienteDe(pedido);
+            var anulada = pedido.IdEstado == 4;
+
+            return new DetalleFacturaViewModel
+            {
+                Encabezado = new EncabezadoFactura
+                {
+                    IdFactura = pedido.Id,
+                    IdPedido = pedido.Id,
+                    NumeroFactura = pedido.NumeroFactura!,
+                    FechaFactura = pedido.Fecha,
+                    Subtotal = SubtotalDe(pedido),
+                    CostoEnvio = pedido.CostoEnvio,
+                    Total = TotalDe(pedido),
+                    IdEstadoFactura = anulada ? 2 : 1,
+                    NombreEstado = anulada ? "Anulada" : "Emitida",
+                    NombreCliente = cliente.Nombre,
+                    CorreoCliente = cliente.Correo,
+                    TelefonoCliente = cliente.Telefono,
+                    CedulaCliente = cliente.Cedula,
+                    Direccion = DireccionDe(cliente),
+                    NombreMetodoPago = MetodoDe(pedido),
+                    Comprobante = pedido.Comprobante,
+                    FechaPago = anulada ? null : pedido.Fecha,
+                },
+                Lineas = LineasDe(entorno, pedido),
+            };
+        }
+
+        // La factura nace con el pedido y se anula cuando el pedido se cancela
+        private static FacturaAdmin FacturaDe(PedidoEjemplo pedido)
+        {
+            var anulada = pedido.IdEstado == 4;
+            var cliente = ClienteDe(pedido);
+
+            return new FacturaAdmin
+            {
+                IdFactura = pedido.Id,
+                IdPedido = pedido.Id,
+                NumeroFactura = pedido.NumeroFactura!,
+                FechaFactura = pedido.Fecha,
+                Total = TotalDe(pedido),
+                IdEstadoFactura = anulada ? 2 : 1,
+                NombreEstado = anulada ? "Anulada" : "Emitida",
+                NombreCliente = cliente.Nombre,
+                CorreoCliente = cliente.Correo,
+                NombreMetodoPago = MetodoDe(pedido),
+                Comprobante = pedido.Comprobante,
+            };
+        }
+
+        // Los campos date mandan yyyy-MM-dd. El limite de arriba suma un dia
+        // para que el ultimo dia entre completo, igual que los procedimientos
+        private static IEnumerable<T> EntreFechas<T>(
+            IEnumerable<T> origen,
+            Func<T, DateTime> fecha,
+            string? desde,
+            string? hasta)
+        {
+            if (DateTime.TryParse(desde, out var inicio))
+            {
+                origen = origen.Where(fila => fecha(fila) >= inicio.Date);
+            }
+
+            if (DateTime.TryParse(hasta, out var fin))
+            {
+                origen = origen.Where(fila => fecha(fila) < fin.Date.AddDays(1));
+            }
+
+            return origen;
+        }
 
         // ----------------------------------------------------------------
         // Apoyo

@@ -1,0 +1,139 @@
+@*
+Listado de facturas. Origen Admin/Facturas.html. Layout _LayoutAdmin. Solo Administrador
+Solo consulta: SP_Pedido_Confirmar la emite y la cancelacion del pedido la anula
+Datos de ListadoFacturasViewModel mientras no exista SP_Factura_Listar
+La factura es uno a uno con el pedido y su numero es irrepetible
+Emitida o Anulada son estados de factura, no los del pago
+*@
+@model ListadoFacturasViewModel
+@{
+    ViewData["Titulo"] = "Facturas";
+
+    var filtros = new Dictionary<string, string?>
+    {
+        ["busqueda"] = Model.Busqueda,
+        ["fechaInicio"] = Model.FechaInicio,
+        ["fechaFin"] = Model.FechaFin,
+    };
+
+    var culturaLocal = new System.Globalization.CultureInfo("es-CR");
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Facturas",
+    Texto = "Documentos emitidos por cada compra. Se generan solos al confirmar el pedido." })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+
+<form method="get" asp-controller="Admin" asp-action="Facturas" class="LenFiltros mb-4">
+    <div class="LenFiltros-Principal">
+        <label class="LenEtiqueta" for="Busqueda">Buscar</label>
+        <input type="text" class="LenCampo" id="Busqueda" name="busqueda"
+               value="@Model.Busqueda" placeholder="N&uacute;mero de factura, cliente o correo">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaInicio">Desde</label>
+        <input type="date" class="LenCampo" id="FechaInicio" name="fechaInicio" value="@Model.FechaInicio">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="FechaFin">Hasta</label>
+        <input type="date" class="LenCampo" id="FechaFin" name="fechaFin" value="@Model.FechaFin">
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">
+        <i class="bi bi-search" aria-hidden="true"></i> Filtrar
+    </button>
+</form>
+
+
+@if (Model.Facturas.Count > 0)
+{
+    <div class="LenPanel LenTabla-Envoltura p-0">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Factura</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">M&eacute;todo de pago</th>
+                    <th scope="col" class="LenTabla-Numero">Total</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var factura in Model.Facturas)
+                {
+                    @* La factura de un pedido cancelado queda anulada *@
+                    <tr class="@(factura.EstaAnulada ? "LenTabla-Inactiva" : null)">
+                        <td>
+                            <strong>@factura.NumeroFactura</strong><br>
+                            <small>
+                                <a class="LenEnlace" asp-controller="Admin" asp-action="PedidoDetalle"
+                                   asp-route-idPedido="@factura.IdPedido">Pedido #@factura.IdPedido</a>
+                            </small>
+                        </td>
+                        <td>
+                            @factura.NombreCliente<br>
+                            <small class="LenSuave">@factura.CorreoCliente</small>
+                        </td>
+                        <td>@factura.FechaFactura.ToString("dd/MM/yyyy hh:mm tt", culturaLocal)</td>
+                        <td>
+                            @factura.NombreMetodoPago
+                            @if (!string.IsNullOrWhiteSpace(factura.Comprobante))
+                            {
+                                <br>
+                                <small class="LenSuave">Comprobante: @factura.Comprobante</small>
+                            }
+                        </td>
+                        <td class="LenTabla-Numero">@FormatoMoneda.Colones(factura.Total)</td>
+                        <td class="text-center">
+                            @if (factura.EstaAnulada)
+                            {
+                                <span class="LenBadge LenBadge--Negativo">@factura.NombreEstado</span>
+                            }
+                            else
+                            {
+                                <span class="LenBadge LenBadge--Exito">@factura.NombreEstado</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="LenTabla-Acciones">
+                                <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                   asp-controller="Admin" asp-action="FacturaDetalle"
+                                   asp-route-idFactura="@factura.IdFactura">Ver factura</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="@(new PaginacionViewModel {
+        PaginaActual = Model.PaginaActual,
+        TotalPaginas = Model.TotalPaginas,
+        Ruta = "/Admin/Facturas",
+        Filtros = filtros })" />
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "No se encontraron facturas",
+        Texto = "Ajuste los filtros de b&uacute;squeda.",
+        Clases = "mt-4" })" />
+}

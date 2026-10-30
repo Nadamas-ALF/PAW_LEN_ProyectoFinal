@@ -8,19 +8,34 @@ decoracion: avisa que hay algo que revisar
 @model IndicadorViewModel
 
 <article class="LenIndicador @(Model.Atencion ? "LenIndicador--Atencion" : null)">
-    <div class="LenIndicador-Encabezado">
+
+    @* Con icono el rotulo va dentro del encabezado para que queden en la misma
+       linea. Sin icono no hace falta el envoltorio, y asi son los de Pagos *@
+    @if (Model.Icono is not null)
+    {
+        <div class="LenIndicador-Encabezado">
+            <span class="LenSubtitulo">@Html.Raw(Model.Rotulo)</span>
+            <i class="bi bi-@Model.Icono" aria-hidden="true"></i>
+        </div>
+    }
+    else
+    {
         <span class="LenSubtitulo">@Html.Raw(Model.Rotulo)</span>
-        <i class="bi bi-@Model.Icono" aria-hidden="true"></i>
-    </div>
+    }
+
     <span class="LenIndicador-Valor">@Html.Raw(Model.Valor)</span>
-    <span class="LenIndicador-Pie">
-        @if (Model.UrlPie is not null)
-        {
-            <a class="LenEnlace" href="@Model.UrlPie">@Html.Raw(Model.Pie)</a>
-        }
-        else
-        {
-            @Html.Raw(Model.Pie)
-        }
-    </span>
+
+    @if (!string.IsNullOrEmpty(Model.Pie))
+    {
+        <span class="LenIndicador-Pie">
+            @if (Model.UrlPie is not null)
+            {
+                <a class="LenEnlace" href="@Model.UrlPie">@Html.Raw(Model.Pie)</a>
+            }
+            else
+            {
+                @Html.Raw(Model.Pie)
+            }
+        </span>
+    }
 </article>

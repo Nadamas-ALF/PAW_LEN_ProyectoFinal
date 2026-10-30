@@ -30,12 +30,14 @@ namespace LEN_Web.Models
     {
         public string Rotulo { get; set; } = string.Empty;
 
-        // Nombre del icono de Bootstrap, sin el prefijo bi-
-        public string Icono { get; set; } = string.Empty;
+        // Nombre del icono de Bootstrap, sin el prefijo bi-. Sin icono el rotulo
+        // va solo, como en los cuatro de Pagos
+        public string? Icono { get; set; }
 
         public string Valor { get; set; } = string.Empty;
 
-        public string Pie { get; set; } = string.Empty;
+        // Opcional: dos de los de Pagos no lo llevan
+        public string? Pie { get; set; }
 
         // Con url el pie se vuelve enlace. Solo el de productos agotados lo usa
         public string? UrlPie { get; set; }

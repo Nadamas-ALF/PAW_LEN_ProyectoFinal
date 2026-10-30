@@ -1,0 +1,140 @@
+@*
+Factura para ver en pantalla. Origen Admin/FacturaDetalle.html. Layout _LayoutAdmin
+Solo lectura. Datos de DetalleFacturaViewModel mientras no exista SP_Factura_ObtenerDetalle
+El procedimiento devuelve una fila por producto con el encabezado repetido y el
+servicio lo agrupa en Encabezado y Lineas, que es la forma que tiene el modelo
+La cedula es opcional en TB_USUARIO. Imprimir no existe y el boton queda deshabilitado
+*@
+@model DetalleFacturaViewModel
+@{
+    var factura = Model.Encabezado;
+    ViewData["Titulo"] = Html.Encode(factura.NumeroFactura);
+
+    var culturaLocal = new System.Globalization.CultureInfo("es-CR");
+    var fechaLarga = factura.FechaFactura.ToString("dd/MM/yyyy hh:mm tt", culturaLocal);
+}
+
+<partial name="_Migas" model="@(new List<MigaViewModel> {
+    new() { Texto = "Principal", Url = Url.Action("Tablero", "Admin") },
+    new() { Texto = "Facturas", Url = Url.Action("Facturas", "Admin") },
+    new() { Texto = Html.Encode(factura.NumeroFactura) },
+})" />
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">@factura.NumeroFactura</h1>
+        <p class="LenEncabezado-Texto">Emitida el @fechaLarga</p>
+    </div>
+    <div class="LenEncabezado-Acciones">
+        @* Imprimir no existe todavia: el boton se marca y no finge nada *@
+        <button type="button" class="LenBoton LenBoton--Grafito" disabled title="Imprimir: pendiente">
+            <i class="bi bi-printer" aria-hidden="true"></i> Imprimir factura
+        </button>
+        <a class="LenBoton LenBoton--Secundario" asp-controller="Admin" asp-action="Facturas">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a facturas
+        </a>
+    </div>
+</div>
+
+<div class="LenPanel LenPanel--Documento">
+
+    <div class="row g-4 pb-4">
+        <div class="col-12 col-md-4">
+            <h2 class="LenSubtitulo mb-3">Cliente</h2>
+            <p class="mb-1"><strong>@factura.NombreCliente</strong></p>
+            <p class="mb-1 LenSuave">@factura.CorreoCliente</p>
+            @if (!string.IsNullOrWhiteSpace(factura.TelefonoCliente))
+            {
+                <p class="mb-1 LenSuave">Tel. @factura.TelefonoCliente</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(factura.CedulaCliente))
+            {
+                <p class="mb-0 LenSuave">C&eacute;dula @factura.CedulaCliente</p>
+            }
+        </div>
+
+        <div class="col-12 col-md-4">
+            <h2 class="LenSubtitulo mb-3">Direcci&oacute;n de env&iacute;o</h2>
+            @if (!string.IsNullOrWhiteSpace(factura.Direccion.DireccionExacta))
+            {
+                <p class="mb-1"><strong>@factura.Direccion.NombreDestinatario</strong></p>
+                <p class="mb-1">@factura.Direccion.DireccionExacta</p>
+                <p class="mb-0 LenSuave">@factura.Direccion.Ubicacion</p>
+            }
+            else
+            {
+                <p class="LenAyuda">No registrada</p>
+            }
+        </div>
+
+        <div class="col-12 col-md-4">
+            <h2 class="LenSubtitulo mb-3">Pago</h2>
+            <p class="mb-1">
+                <strong>@(string.IsNullOrWhiteSpace(factura.NombreMetodoPago) ? "No registrado" : factura.NombreMetodoPago)</strong>
+            </p>
+            @if (!string.IsNullOrWhiteSpace(factura.Comprobante))
+            {
+                <p class="mb-1 LenSuave">Comprobante: @factura.Comprobante</p>
+            }
+            @if (factura.FechaPago.HasValue)
+            {
+                <p class="mb-2 LenSuave">
+                    Pagado el @factura.FechaPago.Value.ToString("dd/MM/yyyy hh:mm tt", culturaLocal)
+                </p>
+            }
+
+            @if (factura.EstaAnulada)
+            {
+                <span class="LenBadge LenBadge--Negativo">@factura.NombreEstado</span>
+            }
+            else
+            {
+                <span class="LenBadge LenBadge--Exito">@factura.NombreEstado</span>
+            }
+        </div>
+    </div>
+
+
+    <div class="LenTabla-Envoltura">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col" class="text-center">Cantidad</th>
+                    <th scope="col" class="LenTabla-Numero">Precio unitario</th>
+                    <th scope="col" class="LenTabla-Numero">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var linea in Model.Lineas)
+                {
+                    <tr>
+                        <td>@linea.NombreProducto</td>
+                        <td class="text-center">@linea.Cantidad</td>
+                        <td class="LenTabla-Numero">@FormatoMoneda.Colones(linea.PrecioUnitario)</td>
+                        <td class="LenTabla-Numero">@FormatoMoneda.Colones(linea.SubtotalLinea)</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="LenTabla-Numero LenSuave">Subtotal</td>
+                    <td class="LenTabla-Numero">@FormatoMoneda.Colones(factura.Subtotal)</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="LenTabla-Numero LenSuave">Costo de env&iacute;o</td>
+                    <td class="LenTabla-Numero">@FormatoMoneda.Colones(factura.CostoEnvio)</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="LenTabla-Numero"><strong>Total</strong></td>
+                    <td class="LenTabla-Numero"><strong>@FormatoMoneda.Colones(factura.Total)</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <p class="LenAyuda mt-3 mb-0">
+        Documento generado por el sistema. El pago es simulado para
+        efectos del proyecto.
+    </p>
+</div>
