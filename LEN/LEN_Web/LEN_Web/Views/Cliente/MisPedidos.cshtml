@@ -1,0 +1,90 @@
+@*
+Historial de pedidos. Origen Cliente/MisPedidos.html. Layout _LayoutPublico
+Pide sesion y solo muestra los pedidos de la cuenta. Datos de HistorialPedidosViewModel
+mientras no exista SP_Pedido_ListarPorUsuario
+El cliente ve otras palabras que el panel: Pagado es Comprada y Entregado es Recibido
+El color sale de ClaseCssEstado, no de la vista
+*@
+@model HistorialPedidosViewModel
+@{
+    ViewData["Titulo"] = "Mis pedidos";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Mis pedidos</h1>
+        <p class="LenEncabezado-Texto">Historial de compras de su cuenta.</p>
+    </div>
+</div>
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (Model.TienePedidos)
+{
+    <div class="LenPanel LenTabla-Envoltura p-0">
+        <table class="LenTabla LenTabla--Apilada">
+            <thead>
+                <tr>
+                    <th scope="col">Factura</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col" class="text-center">Art&iacute;culos</th>
+                    <th scope="col" class="LenTabla-Numero">Total</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col"><span class="LenSoloLectores">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var pedido in Model.Pedidos)
+                {
+                    <tr>
+                        <td class="fw-bold">@pedido.NumeroFactura</td>
+                        <td data-etiqueta="Fecha">@pedido.FechaPedido.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center" data-etiqueta="Articulos">@pedido.CantidadProductos</td>
+                        <td class="LenTabla-Numero" data-etiqueta="Total">@FormatoMoneda.Colones(pedido.Total)</td>
+                        <td class="text-center" data-etiqueta="Estado">
+                            <partial name="_InsigniaEstado" model="@(new InsigniaEstadoViewModel {
+                                Etiqueta = pedido.EstadoVisible,
+                                ClaseCss = pedido.ClaseCssEstado })" />
+                        </td>
+                        <td>
+                            <div class="LenTabla-Acciones">
+                                <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                   asp-controller="Cliente" asp-action="PedidoDetalle"
+                                   asp-route-idPedido="@pedido.IdPedido">Ver detalle</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="@(new PaginacionViewModel {
+        PaginaActual = Model.PaginaActual,
+        TotalPaginas = Model.TotalPaginas,
+        Ruta = "/Cliente/MisPedidos" })" />
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "A&uacute;n no tiene pedidos",
+        Texto = "Cuando realice una compra podr&aacute; ver aqu&iacute; su historial.",
+        TextoBoton = "Ver productos",
+        UrlBoton = Url.Action("Catalogo", "Publico"),
+        Clases = "mt-5" })" />
+}

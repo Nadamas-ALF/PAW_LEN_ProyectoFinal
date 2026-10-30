@@ -61,6 +61,19 @@ namespace LEN_Web.Models
 
         public bool EsPrincipal { get; set; }
 
+        public string? Referencia { get; set; }
+
+        // Baja logica. La direccion inactiva sigue visible en EditarCuenta y lo
+        // unico que pierde es el boton de desactivar
+        public bool Activo { get; set; } = true;
+
+        // Los tres hacen falta para rellenar la cascada al editar la direccion
+        public int IdProvincia { get; set; }
+
+        public int IdCanton { get; set; }
+
+        public int IdDistrito { get; set; }
+
         public string Ubicacion => $"{Distrito}, {Canton}, {Provincia}";
     }
 

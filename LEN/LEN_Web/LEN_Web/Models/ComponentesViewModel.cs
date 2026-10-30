@@ -26,6 +26,45 @@ namespace LEN_Web.Models
         public string? Clases { get; set; }
     }
 
+    public class FilaDato
+    {
+        public string Etiqueta { get; set; } = string.Empty;
+
+        // Vacio se pinta como raya: un dd en blanco se lee como un error de la
+        // pagina, no como un dato que el usuario no lleno
+        public string? Valor { get; set; }
+    }
+
+    public class DatosViewModel
+    {
+        public List<FilaDato> Filas { get; set; } = new();
+
+        public string? Clases { get; set; }
+    }
+
+    public class SelectoresUbicacionViewModel
+    {
+        // Los identificadores se arman con Prefijo mas el campo mas Sufijo, igual
+        // que en la plantilla: AgregarProvincia y EditarProvincia1
+        public string Prefijo { get; set; } = string.Empty;
+
+        public string Sufijo { get; set; } = string.Empty;
+
+        public List<OpcionUbicacion> Provincias { get; set; } = new();
+
+        // Vacios cuando todavia no hay provincia elegida. Entonces los dos
+        // selectores de abajo nacen deshabilitados
+        public List<OpcionUbicacion> Cantones { get; set; } = new();
+
+        public List<OpcionUbicacion> Distritos { get; set; } = new();
+
+        public int? IdProvincia { get; set; }
+
+        public int? IdCanton { get; set; }
+
+        public int? IdDistrito { get; set; }
+    }
+
     public class ConfirmarModalViewModel
     {
         public string Id { get; set; } = string.Empty;

@@ -1,0 +1,22 @@
+@*
+Lista de datos en dos columnas. Sale en MiCuenta Admin/PedidoDetalle y UsuarioDetalle
+La etiqueta es texto nuestro y lleva entidades. El valor viene del dato y se escapa
+El valor vacio se pinta como raya: en blanco se lee como un error de la pagina
+*@
+@model DatosViewModel
+
+<dl class="LenDatos @Model.Clases">
+    @foreach (var fila in Model.Filas)
+    {
+        <dt>@Html.Raw(fila.Etiqueta)</dt>
+
+        @if (string.IsNullOrWhiteSpace(fila.Valor))
+        {
+            <dd>&mdash;</dd>
+        }
+        else
+        {
+            <dd>@fila.Valor</dd>
+        }
+    }
+</dl>

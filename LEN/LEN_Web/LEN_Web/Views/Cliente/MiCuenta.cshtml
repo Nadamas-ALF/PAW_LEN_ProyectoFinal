@@ -1,0 +1,120 @@
+@*
+Inicio de la cuenta del cliente. Origen Cliente/MiCuenta.html. Layout _LayoutPublico
+Solo lectura: lo que se cambia esta en EditarCuenta. Datos de CuentaViewModel
+mientras no existan SP_Usuario_ObtenerPorId ni SP_Direccion_ListarPorUsuario
+Los dos dl de la plantilla son un solo dl aca: el vacio lo pinta _Datos como raya
+Cerrar sesion es POST y no enlace para que otro sitio no lo pueda disparar
+*@
+@model CuentaViewModel
+@{
+    ViewData["Titulo"] = "Mi cuenta";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Mi cuenta</h1>
+        <p class="LenEncabezado-Texto">
+            Hola, @Model.Usuario.Nombre. Aqu&iacute; puede consultar su
+            informaci&oacute;n y acceder a sus compras.
+        </p>
+    </div>
+</div>
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<div class="LenAtajos mb-5">
+    <a class="LenAtajo" asp-controller="Cliente" asp-action="Carrito">
+        <i class="bi bi-cart" aria-hidden="true"></i> Mi carrito
+    </a>
+    <a class="LenAtajo" asp-controller="Cliente" asp-action="MisPedidos">
+        <i class="bi bi-box-seam" aria-hidden="true"></i> Mis pedidos
+    </a>
+    <a class="LenAtajo" asp-controller="Cliente" asp-action="Favoritos">
+        <i class="bi bi-heart" aria-hidden="true"></i> Mis favoritos
+    </a>
+    <form method="post" action="/Acceso/CerrarSesion">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="LenAtajo">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i> Cerrar sesi&oacute;n
+        </button>
+    </form>
+</div>
+
+
+<div class="row g-4 g-lg-5">
+
+    <div class="col-lg-6">
+        <section class="LenBloque">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="LenBloque-Titulo mb-0">Mis datos</h2>
+                <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                   asp-controller="Cliente" asp-action="EditarCuenta">Editar</a>
+            </div>
+
+            <partial name="_Datos" model="@(new DatosViewModel {
+                Filas =
+                [
+                    new FilaDato { Etiqueta = "Nombre", Valor = Model.Usuario.NombreCompleto },
+                    new FilaDato { Etiqueta = "Correo", Valor = Model.Usuario.Correo },
+                    new FilaDato { Etiqueta = "Tel&eacute;fono", Valor = Model.Usuario.Telefono },
+                    new FilaDato { Etiqueta = "C&eacute;dula", Valor = Model.Usuario.Cedula },
+                    new FilaDato { Etiqueta = "Miembro desde",
+                                   Valor = Model.Usuario.FechaRegistro.ToString("dd/MM/yyyy") },
+                ] })" />
+        </section>
+    </div>
+
+
+    <div class="col-lg-6">
+        <section class="LenBloque">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="LenBloque-Titulo mb-0">Mis direcciones</h2>
+                <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                   asp-controller="Cliente" asp-action="EditarCuenta">Administrar</a>
+            </div>
+
+            @if (Model.Direcciones.Count > 0)
+            {
+                @foreach (var direccion in Model.Direcciones)
+                {
+                    <div class="LenPanel mb-2">
+                        <p class="mb-0">
+                            <span class="fw-bold">@direccion.NombreDestinatario</span>
+                            @if (direccion.EsPrincipal)
+                            {
+                                <span class="LenBadge LenBadge--Exito ms-1">Principal</span>
+                            }
+                            <br>
+                            @direccion.DireccionExacta
+                            <span class="LenAyuda">
+                                @direccion.Ubicacion &middot; Tel: @direccion.TelefonoContacto
+                            </span>
+                        </p>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="LenTexto--Guia mt-3 mb-0">
+                    A&uacute;n no tiene direcciones registradas. Agregue una para poder
+                    completar sus compras.
+                </p>
+            }
+        </section>
+    </div>
+</div>

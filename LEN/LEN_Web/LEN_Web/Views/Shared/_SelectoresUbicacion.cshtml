@@ -1,0 +1,64 @@
+@*
+Provincia canton y distrito en cascada. Sale 4 veces: dos en EditarCuenta y dos en
+Admin/UsuarioDetalle. Trae los tres col-md-4 porque siempre van juntos en una fila
+Solo el distrito lleva name: los otros dos filtran y no se guardan
+Sin provincia elegida los de abajo nacen deshabilitados y los llena len.js
+*@
+@model SelectoresUbicacionViewModel
+@{
+    var idProvincia = $"{Model.Prefijo}Provincia{Model.Sufijo}";
+    var idCanton = $"{Model.Prefijo}Canton{Model.Sufijo}";
+    var idDistrito = $"{Model.Prefijo}Distrito{Model.Sufijo}";
+}
+
+<div class="col-md-4">
+    <label class="LenEtiqueta" for="@idProvincia">Provincia</label>
+    <select class="LenCampo" id="@idProvincia" required>
+        @if (Model.IdProvincia is null)
+        {
+            <option value="">Seleccione</option>
+        }
+        @foreach (var provincia in Model.Provincias)
+        {
+            <option value="@provincia.Id" selected="@(provincia.Id == Model.IdProvincia)">@provincia.Nombre</option>
+        }
+    </select>
+</div>
+
+<div class="col-md-4">
+    <label class="LenEtiqueta" for="@idCanton">Cant&oacute;n</label>
+    @if (Model.Cantones.Count == 0)
+    {
+        <select class="LenCampo" id="@idCanton" disabled required>
+            <option value="">Seleccione una provincia primero</option>
+        </select>
+    }
+    else
+    {
+        <select class="LenCampo" id="@idCanton" required>
+            @foreach (var canton in Model.Cantones)
+            {
+                <option value="@canton.Id" selected="@(canton.Id == Model.IdCanton)">@canton.Nombre</option>
+            }
+        </select>
+    }
+</div>
+
+<div class="col-md-4">
+    <label class="LenEtiqueta" for="@idDistrito">Distrito</label>
+    @if (Model.Distritos.Count == 0)
+    {
+        <select class="LenCampo" id="@idDistrito" name="IdDistrito" disabled required>
+            <option value="">Seleccione un cant&oacute;n primero</option>
+        </select>
+    }
+    else
+    {
+        <select class="LenCampo" id="@idDistrito" name="IdDistrito" required>
+            @foreach (var distrito in Model.Distritos)
+            {
+                <option value="@distrito.Id" selected="@(distrito.Id == Model.IdDistrito)">@distrito.Nombre</option>
+            }
+        </select>
+    }
+</div>

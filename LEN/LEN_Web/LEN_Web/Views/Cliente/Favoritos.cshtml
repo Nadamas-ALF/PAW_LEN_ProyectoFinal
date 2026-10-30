@@ -1,0 +1,66 @@
+@*
+Favoritos del cliente. Origen Cliente/Favoritos.html. Layout _LayoutPublico. Pide sesion
+Datos de List<ProductoResumen> mientras no exista SP_Favorito_ListarPorUsuario
+Es la tarjeta del catalogo sin corazon y con el boton de quitar: variante Favoritos
+Un favorito agotado sigue en la lista con su cinta. Uno dado de baja ya no aparece
+Sin paginacion como el original: con cien favoritos la pantalla se alarga
+*@
+@model List<ProductoResumen>
+@{
+    ViewData["Titulo"] = "Mis favoritos";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Mis favoritos</h1>
+        <p class="LenEncabezado-Texto">Productos que ha guardado para revisar m&aacute;s tarde.</p>
+    </div>
+</div>
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (Model.Count > 0)
+{
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+        @foreach (var producto in Model)
+        {
+            <div class="col">
+                <partial name="_TarjetaProducto" model="@TarjetaProductoViewModel.Desde(
+                    producto, VarianteTarjeta.Favoritos, nivelTitulo: 2,
+                    esFavorito: true, urlRetorno: "/Cliente/Favoritos")" />
+            </div>
+        }
+    </div>
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "A&uacute;n no ha guardado productos favoritos",
+        Texto = "Explore el cat&aacute;logo y agregue productos a su lista de favoritos.",
+        TextoBoton = "Ver cat&aacute;logo",
+        UrlBoton = Url.Action("Catalogo", "Publico"),
+        Clases = "mt-5" })" />
+}

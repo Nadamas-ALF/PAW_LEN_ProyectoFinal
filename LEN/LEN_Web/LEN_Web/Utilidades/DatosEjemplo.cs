@@ -193,6 +193,9 @@ namespace LEN_Web.Utilidades
             ],
         };
 
+        // Las activas, que es lo que ven el checkout y MiCuenta. Los identificadores
+        // de canton y distrito son el orden en que los inserta 02_catalogos.sql,
+        // porque esas dos tablas usan IDENTITY y el script no los fija
         public static List<DireccionEnvio> Direcciones() =>
         [
             new()
@@ -200,7 +203,9 @@ namespace LEN_Web.Utilidades
                 IdDireccion = 1,
                 NombreDestinatario = "Ana Mora Jimenez",
                 DireccionExacta = "200 m sur de la escuela, casa verde",
+                Referencia = "porton negro, frente al parque",
                 Distrito = "Carmen", Canton = "San Jose", Provincia = "San Jose",
+                IdProvincia = 1, IdCanton = 1, IdDistrito = 1,
                 TelefonoContacto = "8888-0001",
                 EsPrincipal = true,
             },
@@ -210,7 +215,192 @@ namespace LEN_Web.Utilidades
                 NombreDestinatario = "Luis Castro Pineda",
                 DireccionExacta = "Oficentro La Sabana, edificio 4, piso 2",
                 Distrito = "Mata Redonda", Canton = "San Jose", Provincia = "San Jose",
+                IdProvincia = 1, IdCanton = 1, IdDistrito = 8,
                 TelefonoContacto = "8888-0002",
+            },
+        ];
+
+        // ----------------------------------------------------------------
+        // Cuenta del cliente
+        // ----------------------------------------------------------------
+
+        public static UsuarioCuenta UsuarioActual() => new()
+        {
+            IdUsuario = 1,
+            Nombre = "Ana",
+            Apellido = "Mora Jimenez",
+            Correo = "ana.mora@example.com",
+            Telefono = "8888-0001",
+            Cedula = "118880001",
+            FechaRegistro = new DateTime(2026, 3, 14),
+        };
+
+        public static CuentaViewModel Cuenta() => new()
+        {
+            Usuario = UsuarioActual(),
+            Direcciones = Direcciones(),
+        };
+
+        public static EditarCuentaViewModel EdicionCuenta() => new()
+        {
+            Usuario = UsuarioActual(),
+            Direcciones = DireccionesAdministrables(),
+            Provincias = Provincias(),
+        };
+
+        // EditarCuenta lista todas, activas y no. La segunda viene de baja a
+        // proposito: es el unico lugar donde se puede ver ese estado
+        public static List<DireccionEnvio> DireccionesAdministrables()
+        {
+            var lista = Direcciones();
+            lista[1].Activo = false;
+            return lista;
+        }
+
+        // Las 7 de SP_Provincia_Listar
+        public static List<OpcionUbicacion> Provincias() =>
+        [
+            new() { Id = 1, Nombre = "San Jose" },
+            new() { Id = 2, Nombre = "Alajuela" },
+            new() { Id = 3, Nombre = "Cartago" },
+            new() { Id = 4, Nombre = "Heredia" },
+            new() { Id = 5, Nombre = "Guanacaste" },
+            new() { Id = 6, Nombre = "Puntarenas" },
+            new() { Id = 7, Nombre = "Limon" },
+        ];
+
+        // Al editar una direccion la cascada llega resuelta. Sin endpoint de
+        // catalogos solo se puede mostrar la provincia que ya estaba guardada
+        public static List<OpcionUbicacion> CantonesDeEjemplo() =>
+        [
+            new() { Id = 1, Nombre = "San Jose" },
+            new() { Id = 2, Nombre = "Escazu" },
+        ];
+
+        public static List<OpcionUbicacion> DistritosDeEjemplo() =>
+        [
+            new() { Id = 1, Nombre = "Carmen" },
+            new() { Id = 2, Nombre = "Merced" },
+            new() { Id = 8, Nombre = "Mata Redonda" },
+        ];
+
+        // ----------------------------------------------------------------
+        // Favoritos
+        // ----------------------------------------------------------------
+
+        // El Llavero Flor esta en cero y sirve para ver la cinta de agotado: un
+        // favorito agotado sigue en la lista, no desaparece
+        public static List<ProductoResumen> Favoritos(IWebHostEnvironment entorno) =>
+            new[] { 1, 3, 4 }
+                .Select(id => Resumen(entorno, Catalogo.First(fila => fila.Id == id)))
+                .ToList();
+
+        // ----------------------------------------------------------------
+        // Pedidos del cliente
+        // ----------------------------------------------------------------
+
+        public const int PedidosPorPagina = 3;
+
+        public static HistorialPedidosViewModel HistorialPedidos(int pagina)
+        {
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(PedidosEjemplo.Count / (double)PedidosPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+
+            return new HistorialPedidosViewModel
+            {
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+                Pedidos = PedidosEjemplo
+                    .Skip((paginaSegura - 1) * PedidosPorPagina)
+                    .Take(PedidosPorPagina)
+                    .ToList(),
+            };
+        }
+
+        // Devuelve null si el pedido no es de esta cuenta. La pantalla vuelve al
+        // historial con aviso en lugar de mostrar el pedido de otra persona
+        public static DetallePedidoViewModel? DetallePedido(IWebHostEnvironment entorno, int idPedido)
+        {
+            var pedido = PedidosEjemplo.FirstOrDefault(fila => fila.IdPedido == idPedido);
+
+            if (pedido is null)
+            {
+                return null;
+            }
+
+            var cancelado = pedido.IdEstadoPedido == 4;
+            var lineas = LineasDe(entorno, pedido.IdPedido);
+            var subtotal = lineas.Sum(linea => linea.SubtotalLinea);
+
+            // El envio no es fijo: lo calcula la aplicacion segun la provincia.
+            // Se despeja del total para que las tres cifras siempre cuadren
+            return new DetallePedidoViewModel
+            {
+                IdPedido = pedido.IdPedido,
+                NumeroFactura = pedido.NumeroFactura,
+                FechaPedido = pedido.FechaPedido,
+                Subtotal = subtotal,
+                CostoEnvio = pedido.Total - subtotal,
+                Total = pedido.Total,
+                IdEstadoPedido = pedido.IdEstadoPedido,
+                EstadoVisible = pedido.EstadoVisible,
+                ClaseCssEstado = pedido.ClaseCssEstado,
+                MotivoCancelacion = cancelado ? "el cliente pidio la cancelacion." : null,
+                Direccion = Direcciones()[0],
+                NombreMetodoPago = "Tarjeta",
+                ComprobantePago = "4242",
+                FechaPago = pedido.FechaPedido,
+                EstadoPago = cancelado ? "Anulado" : "Pagado",
+                ClaseCssEstadoPago = cancelado ? "LenBadge--Negativo" : "LenBadge--Exito",
+                Lineas = lineas,
+            };
+        }
+
+        // Las unidades de cada uno suman su CantidadProductos del historial
+        private static List<LineaPedido> LineasDe(IWebHostEnvironment entorno, int idPedido) => idPedido switch
+        {
+            12 => [LineaPedidoDe(entorno, 1, 2), LineaPedidoDe(entorno, 3, 1)],
+            9 => [LineaPedidoDe(entorno, 2, 1), LineaPedidoDe(entorno, 5, 1)],
+            7 => [LineaPedidoDe(entorno, 3, 1)],
+            _ => [LineaPedidoDe(entorno, 4, 1)],
+        };
+
+        // El FAC-000012 vale 25 000 aqui, en su detalle, en la confirmacion, en
+        // la factura y en los pagos del panel. Los cuatro estados de
+        // TB_ESTADO_PEDIDO estan representados para ver los cuatro colores
+        private static readonly List<PedidoResumen> PedidosEjemplo =
+        [
+            new()
+            {
+                IdPedido = 12, NumeroFactura = "FAC-000012",
+                FechaPedido = new DateTime(2026, 9, 20, 15, 42, 0),
+                Total = 25000m, CantidadProductos = 3,
+                IdEstadoPedido = 2, EstadoVisible = "En camino",
+                ClaseCssEstado = "estado-pedido-preparacion",
+            },
+            new()
+            {
+                IdPedido = 9, NumeroFactura = "FAC-000009",
+                FechaPedido = new DateTime(2026, 9, 2, 10, 15, 0),
+                Total = 12800m, CantidadProductos = 2,
+                IdEstadoPedido = 3, EstadoVisible = "Recibido",
+                ClaseCssEstado = "estado-pedido-entregado",
+            },
+            new()
+            {
+                IdPedido = 7, NumeroFactura = "FAC-000007",
+                FechaPedido = new DateTime(2026, 8, 27, 9, 5, 0),
+                Total = 7000m, CantidadProductos = 1,
+                IdEstadoPedido = 1, EstadoVisible = "Comprada",
+                ClaseCssEstado = "estado-pedido-pagado",
+            },
+            new()
+            {
+                IdPedido = 5, NumeroFactura = "FAC-000005",
+                FechaPedido = new DateTime(2026, 8, 18, 16, 30, 0),
+                Total = 4500m, CantidadProductos = 1,
+                IdEstadoPedido = 4, EstadoVisible = "Cancelado",
+                ClaseCssEstado = "estado-pedido-cancelado",
             },
         ];
 

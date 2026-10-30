@@ -1,0 +1,351 @@
+@*
+Editar la cuenta. Origen Cliente/EditarCuenta.html. Layout _LayoutPublico. Pide sesion
+Tres formularios en la pagina y uno por direccion en modales: cada uno llama a su
+procedimiento, por eso estan separados. Datos de EditarCuentaViewModel
+Los campos van con name explicito y no con asp-for: el modelo de la pantalla no es el
+del formulario y asp-for los nombraria Usuario.Nombre, que rompe el contrato
+Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistrito
+*@
+@model EditarCuentaViewModel
+@{
+    ViewData["Titulo"] = "Editar mi cuenta";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Editar mi cuenta</h1>
+        <p class="LenEncabezado-Texto">Actualice sus datos, su contrase&ntilde;a y sus direcciones.</p>
+    </div>
+    <div class="LenEncabezado-Acciones">
+        <a class="LenBoton LenBoton--Secundario" asp-controller="Cliente" asp-action="MiCuenta">Volver a mi cuenta</a>
+    </div>
+</div>
+
+<div class="d-grid gap-2 mb-4">
+    @if (TempData["MensajeExito"] is string mensajeExito)
+    {
+        <partial name="_Aviso" model="@(new AvisoViewModel {
+            Titulo = mensajeExito,
+            Variante = VarianteAviso.Exito })" />
+    }
+
+    @if (TempData["MensajeError"] is string mensajeError)
+    {
+        <partial name="_Aviso" model="@(new AvisoViewModel {
+            Titulo = mensajeError,
+            Variante = VarianteAviso.Aviso })" />
+    }
+
+    @if (TempData["MensajePendiente"] is string pendiente)
+    {
+        <partial name="_Aviso" model="@(new AvisoViewModel {
+            Titulo = pendiente,
+            Variante = VarianteAviso.Aviso,
+            Cerrable = true })" />
+    }
+</div>
+
+
+<div class="row g-4 g-lg-5">
+
+    <div class="col-lg-6">
+        <section class="LenBloque">
+            <h2 class="LenBloque-Titulo">Mis datos</h2>
+
+            <form method="post" action="/Cuenta/ActualizarDatos">
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Nombre">Nombre</label>
+                        <input type="text" class="LenCampo" id="Nombre" name="Nombre"
+                               maxlength="100" value="@Model.Usuario.Nombre" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Apellido">Apellido</label>
+                        <input type="text" class="LenCampo" id="Apellido" name="Apellido"
+                               maxlength="100" value="@Model.Usuario.Apellido" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Cedula">C&eacute;dula <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                        <input type="text" class="LenCampo" id="Cedula" name="Cedula"
+                               maxlength="20" value="@Model.Usuario.Cedula">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="LenEtiqueta" for="Telefono">Tel&eacute;fono <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                        <input type="tel" class="LenCampo" id="Telefono" name="Telefono"
+                               maxlength="20" value="@Model.Usuario.Telefono">
+                    </div>
+                    <div class="col-12">
+                        <label class="LenEtiqueta" for="Correo">Correo electr&oacute;nico</label>
+                        <input type="email" class="LenCampo" id="Correo" name="Correo"
+                               maxlength="150" value="@Model.Usuario.Correo" required>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
+
+
+    <div class="col-lg-6">
+        <section class="LenBloque">
+            <h2 class="LenBloque-Titulo">Cambiar contrase&ntilde;a</h2>
+
+            <form method="post" action="/Cuenta/CambiarContrasena">
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+
+                    @* La contrasena actual todavia no la recibe el API. Sin ella quien se
+                       siente frente a una sesion abierta la cambia sin saber la anterior *@
+                    <div class="col-12">
+                        <label class="LenEtiqueta" for="ContrasenaActual">Contrase&ntilde;a actual</label>
+                        <input type="password" class="LenCampo" id="ContrasenaActual"
+                               name="ContrasenaActual" autocomplete="current-password">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="LenEtiqueta" for="Contrasena">Nueva contrase&ntilde;a</label>
+                        <input type="password" class="LenCampo" id="Contrasena" name="Contrasena"
+                               minlength="8" maxlength="255" autocomplete="new-password" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="LenEtiqueta" for="ConfirmarContrasena">Confirmar contrase&ntilde;a</label>
+                        <input type="password" class="LenCampo" id="ConfirmarContrasena"
+                               name="ConfirmarContrasena" minlength="8" maxlength="255"
+                               autocomplete="new-password" required>
+                        @* No hay modelo de formulario que validar con asp-for, asi que
+                           el error de coincidencia se lee del ModelState a mano *@
+                        @if (ViewData.ModelState["ConfirmarContrasena"]?.Errors.Count > 0)
+                        {
+                            <span class="LenError">Las dos contrase&ntilde;as no coinciden.</span>
+                        }
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="LenBoton LenBoton--Secundario">Actualizar contrase&ntilde;a</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
+
+
+    <div class="col-12">
+        <section class="LenBloque">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="LenBloque-Titulo mb-0">Mis direcciones</h2>
+                <button type="button" class="LenBoton LenBoton--Principal LenBoton--Pequeno"
+                        data-bs-toggle="modal" data-bs-target="#AgregarDireccion">
+                    Agregar direcci&oacute;n
+                </button>
+            </div>
+
+            @if (Model.Direcciones.Count > 0)
+            {
+                <div class="row g-3">
+                    @foreach (var direccion in Model.Direcciones)
+                    {
+                        <div class="col-md-6">
+                            <div class="LenPanel h-100">
+                                <p class="mb-0">
+                                    <span class="fw-bold">@direccion.NombreDestinatario</span>
+                                    @if (direccion.EsPrincipal)
+                                    {
+                                        <span class="LenBadge LenBadge--Exito ms-1">Principal</span>
+                                    }
+                                    @if (!direccion.Activo)
+                                    {
+                                        <span class="LenBadge LenBadge--Neutro ms-1">Inactiva</span>
+                                    }
+                                    <br>
+                                    @direccion.DireccionExacta
+                                    <span class="LenAyuda">
+                                        @direccion.Ubicacion &middot; Tel: @direccion.TelefonoContacto
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(direccion.Referencia))
+                                    {
+                                        <span class="LenAyuda">Referencia: @direccion.Referencia</span>
+                                    }
+                                </p>
+
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                            data-bs-toggle="modal" data-bs-target="#EditarDireccion@(direccion.IdDireccion)">
+                                        Editar
+                                    </button>
+
+                                    @* La dada de baja ya no se puede volver a desactivar *@
+                                    @if (direccion.Activo)
+                                    {
+                                        <form class="d-inline" method="post" action="/Cuenta/DesactivarDireccion">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
+                                            <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">Desactivar</button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="LenTexto--Guia mt-3 mb-0">
+                    A&uacute;n no tiene direcciones registradas. Agregue una para poder
+                    completar sus compras.
+                </p>
+            }
+        </section>
+    </div>
+</div>
+
+
+<div class="modal fade LenModal" id="AgregarDireccion" tabindex="-1" aria-labelledby="TituloAgregarDireccion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Cuenta/AgregarDireccion">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloAgregarDireccion">Agregar direcci&oacute;n</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarDestinatario">Nombre del destinatario</label>
+                            <input type="text" class="LenCampo" id="AgregarDestinatario"
+                                   name="NombreDestinatario" maxlength="150" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="AgregarTelefono">Tel&eacute;fono de contacto</label>
+                            <input type="tel" class="LenCampo" id="AgregarTelefono"
+                                   name="TelefonoContacto" maxlength="20" required>
+                        </div>
+
+                        <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
+                            Prefijo = "Agregar",
+                            Provincias = Model.Provincias })" />
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarDireccionExacta">Direcci&oacute;n exacta</label>
+                            <textarea class="LenCampo" id="AgregarDireccionExacta" name="DireccionExacta"
+                                      rows="3" maxlength="300" required></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="AgregarReferencia">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <textarea class="LenCampo" id="AgregarReferencia" name="Referencia"
+                                      rows="2" maxlength="300"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="AgregarEsPrincipal" name="EsPrincipal" value="true">
+                                @* Sin este oculto una casilla sin marcar no envia nada y el
+                                   modelo recibe null en lugar de false *@
+                                <input type="hidden" name="EsPrincipal" value="false">
+                                <label for="AgregarEsPrincipal">Establecer como direcci&oacute;n principal</label>
+                            </div>
+                            <span class="LenAyuda">
+                                La primera direcci&oacute;n queda principal aunque no se marque.
+                                Si se marca esta, la que era principal deja de serlo.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar direcci&oacute;n</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@* Una modal por direccion, con el Id pegado al identificador. Con muchas
+   direcciones repite HTML: conviene una sola que cargue los datos, y eso pide
+   JavaScript, asi que queda para la fase que lo escriba *@
+@foreach (var direccion in Model.Direcciones)
+{
+    var sufijo = direccion.IdDireccion.ToString();
+
+    <div class="modal fade LenModal" id="EditarDireccion@(sufijo)" tabindex="-1"
+         aria-labelledby="TituloEditarDireccion@(sufijo)" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="/Cuenta/ActualizarDireccion">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
+
+                    <div class="modal-header">
+                        <h2 class="modal-title" id="TituloEditarDireccion@(sufijo)">Editar direcci&oacute;n</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="LenEtiqueta" for="EditarDestinatario@(sufijo)">Nombre del destinatario</label>
+                                <input type="text" class="LenCampo" id="EditarDestinatario@(sufijo)"
+                                       name="NombreDestinatario" value="@direccion.NombreDestinatario"
+                                       maxlength="150" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="LenEtiqueta" for="EditarTelefono@(sufijo)">Tel&eacute;fono de contacto</label>
+                                <input type="tel" class="LenCampo" id="EditarTelefono@(sufijo)"
+                                       name="TelefonoContacto" value="@direccion.TelefonoContacto"
+                                       maxlength="20" required>
+                            </div>
+
+                            @* Al editar la cascada llega resuelta y los tres habilitados *@
+                            <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
+                                Prefijo = "Editar",
+                                Sufijo = sufijo,
+                                Provincias = Model.Provincias,
+                                Cantones = DatosEjemplo.CantonesDeEjemplo(),
+                                Distritos = DatosEjemplo.DistritosDeEjemplo(),
+                                IdProvincia = direccion.IdProvincia,
+                                IdCanton = direccion.IdCanton,
+                                IdDistrito = direccion.IdDistrito })" />
+
+                            <div class="col-12">
+                                <label class="LenEtiqueta" for="EditarDireccionExacta@(sufijo)">Direcci&oacute;n exacta</label>
+                                <textarea class="LenCampo" id="EditarDireccionExacta@(sufijo)" name="DireccionExacta"
+                                          rows="3" maxlength="300" required>@direccion.DireccionExacta</textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="LenEtiqueta" for="EditarReferencia@(sufijo)">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                                <textarea class="LenCampo" id="EditarReferencia@(sufijo)" name="Referencia"
+                                          rows="2" maxlength="300">@direccion.Referencia</textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="LenOpcion mb-0">
+                                    <input type="checkbox" id="EditarEsPrincipal@(sufijo)" name="EsPrincipal"
+                                           value="true" checked="@direccion.EsPrincipal">
+                                    <input type="hidden" name="EsPrincipal" value="false">
+                                    <label for="EditarEsPrincipal@(sufijo)">Establecer como direcci&oacute;n principal</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
