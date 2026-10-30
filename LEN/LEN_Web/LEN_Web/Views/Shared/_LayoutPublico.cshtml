@@ -1,17 +1,11 @@
 @*
-LayoutPublico, origen Frontend_Plantilla/Compartido/LayoutPublico.html
-Lo usan Publico y Acceso por ahora. Cabecera y pie van una sola vez aqui
+Layout de la tienda. Lo usan Publico y Acceso por ahora
+Cabecera y pie van una sola vez aqui. El titulo lo pone cada vista en ViewData["Titulo"]
 Sesion carrito y categorias son datos de ejemplo, todavia no hay login ni catalogo reales
 Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
 *@
 @{
-    var categoriasMenu = new (int IdCategoria, string Nombre)[]
-    {
-        (1, "Collares"),
-        (2, "Pulseras"),
-        (3, "Llaveros"),
-        (4, "Aretes"),
-    };
+    var categoriasMenu = DatosEjemplo.CategoriasMenu;
     var cantidadCarrito = 0;
 }
 <!DOCTYPE html>
