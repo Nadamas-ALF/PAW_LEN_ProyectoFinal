@@ -34,15 +34,10 @@ Todavia no hay accion POST, falta conectar SP_Usuario_AsignarContrasenaTemporal 
 
         @if (TempData["MensajeEnviado"] is not null)
         {
-            <div class="LenAviso LenAviso--Info mt-4" role="status">
-                <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-info-circle"></i></span>
-                <div class="LenAviso-Cuerpo">
-                    <p class="LenAviso-Titulo mb-0">
-                        Si el correo est&aacute; registrado, en unos minutos va a recibir un
-                        mensaje con las instrucciones para recuperar el acceso.
-                    </p>
-                </div>
-            </div>
+            <partial name="_Aviso" model="@(new AvisoViewModel {
+                Titulo = "Si el correo est&aacute; registrado, en unos minutos va a recibir un mensaje con las instrucciones para recuperar el acceso.",
+                Variante = VarianteAviso.Info,
+                Clases = "mt-4" })" />
         }
 
         <p class="mt-4 mb-0">

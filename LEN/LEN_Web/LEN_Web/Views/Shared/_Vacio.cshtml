@@ -1,0 +1,15 @@
+@*
+Bloque vacio. Toda lista necesita uno y sale en trece pantallas
+El texto cambia segun haya filtros o no: no se encontraron resultados no es lo mismo
+que todavia no hay nada. El boton es opcional y hacen falta texto y url para que salga
+*@
+@model VacioViewModel
+
+<div class="LenVacio @Model.Clases">
+    <p class="LenVacio-Titulo">@Html.Raw(Model.Titulo)</p>
+    <p class="LenVacio-Texto">@Html.Raw(Model.Texto)</p>
+    @if (!string.IsNullOrEmpty(Model.TextoBoton) && !string.IsNullOrEmpty(Model.UrlBoton))
+    {
+        <a class="LenBoton LenBoton--Principal" href="@Model.UrlBoton">@Html.Raw(Model.TextoBoton)</a>
+    }
+</div>

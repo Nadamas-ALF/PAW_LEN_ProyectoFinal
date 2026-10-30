@@ -1,0 +1,41 @@
+@*
+Aviso de resultado. Sale en casi toda pantalla que guarda algo
+La variante define color e icono. El icono no es decoracion: el estado no depende solo del color
+Exito e Info van con role status. Aviso y Error con role alert, que el lector anuncia de una
+*@
+@model AvisoViewModel
+@{
+    var clase = Model.Variante switch
+    {
+        VarianteAviso.Exito => "LenAviso--Exito",
+        VarianteAviso.Aviso => "LenAviso--Aviso",
+        VarianteAviso.Error => "LenAviso--Error",
+        _ => "LenAviso--Info",
+    };
+
+    var icono = Model.Variante switch
+    {
+        VarianteAviso.Exito => "bi-check-circle",
+        VarianteAviso.Aviso => "bi-exclamation-circle",
+        VarianteAviso.Error => "bi-x-circle",
+        _ => "bi-info-circle",
+    };
+
+    var papel = Model.Variante is VarianteAviso.Exito or VarianteAviso.Info ? "status" : "alert";
+}
+
+<div class="LenAviso @clase @Model.Clases @(Model.Cerrable ? "alert fade show" : null)"
+     role="@papel" hidden="@(Model.Oculto ? "hidden" : null)">
+    <span class="LenAviso-Icono" aria-hidden="true"><i class="bi @icono"></i></span>
+    <div class="LenAviso-Cuerpo">
+        <p class="LenAviso-Titulo mb-0">@Html.Raw(Model.Titulo)</p>
+        @if (!string.IsNullOrEmpty(Model.Cuerpo))
+        {
+            <p class="mb-0">@Html.Raw(Model.Cuerpo)</p>
+        }
+    </div>
+    @if (Model.Cerrable)
+    {
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    }
+</div>
