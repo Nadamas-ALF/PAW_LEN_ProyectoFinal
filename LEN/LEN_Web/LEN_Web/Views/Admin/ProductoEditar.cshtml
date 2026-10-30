@@ -1,0 +1,46 @@
+@*
+Editar producto. Origen Admin/ProductoEditar.html. Layout _LayoutAdmin. Solo Administrador
+Mismo formulario que ProductoCrear: la parcial _ProductoFormulario decide lo que cambia
+SP_Producto_ObtenerPorId devuelve tambien los dados de baja, y el panel debe poder editarlos
+El estado no es campo del formulario: se cambia en la tabla con SP_Producto_CambiarActivo
+*@
+@model ProductoFormViewModel
+@{
+    ViewData["Titulo"] = Html.Encode(Model.NombreProducto);
+}
+
+<partial name="_Migas" model="@(new List<MigaViewModel> {
+    new() { Texto = "Principal", Url = Url.Action("Tablero", "Admin") },
+    new() { Texto = "Productos", Url = Url.Action("Productos", "Admin") },
+    new() { Texto = "Editar producto" },
+})" />
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = $"Editar &quot;{Html.Encode(Model.NombreProducto)}&quot;",
+    Texto = "Modifique los datos del producto.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Administrar im&aacute;genes",
+            Icono = "images",
+            Url = Url.Action("ProductoImagenes", "Admin", new { idProducto = Model.IdProducto }) },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<partial name="_ProductoFormulario" model="Model" />

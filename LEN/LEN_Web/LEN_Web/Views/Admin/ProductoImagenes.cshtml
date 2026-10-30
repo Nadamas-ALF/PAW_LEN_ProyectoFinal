@@ -1,0 +1,142 @@
+@*
+Imagenes del producto. Origen Admin/ProductoImagenes.html. Layout _LayoutAdmin. Solo Administrador
+Datos de ImagenesProductoViewModel mientras no exista SP_ImagenProducto_ListarPorProducto
+Formulario de subida multipart mas la rejilla de las que ya tiene con sus dos acciones
+Solo una principal por producto, por el indice UX_ImagenProducto_PrincipalProducto
+Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde Editar
+*@
+@model ImagenesProductoViewModel
+@{
+    ViewData["Titulo"] = "Im&aacute;genes del producto";
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = $"Im&aacute;genes de &quot;{Html.Encode(Model.NombreProducto)}&quot;",
+    Texto = "La imagen principal es la que se muestra en el cat&aacute;logo.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Volver a productos",
+            Icono = "arrow-left",
+            Url = Url.Action("Productos", "Admin") },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+
+<div class="LenPanel mb-4">
+    @* El enctype multipart es obligatorio para que el archivo llegue *@
+    <form class="row g-3 align-items-end" method="post"
+          action="/Producto/SubirImagen" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.IdProducto">
+
+        <div class="col-12 col-md-8">
+            <label class="LenEtiqueta" for="Archivo">
+                Nueva imagen (JPG, PNG o WEBP, m&aacute;ximo 5 MB)
+            </label>
+            <input type="file" class="LenCampo" id="Archivo" name="archivo"
+                   accept=".jpg,.jpeg,.png,.webp" required>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">
+                <i class="bi bi-upload" aria-hidden="true"></i> Subir imagen
+            </button>
+        </div>
+
+        @* La columna ya existe en TB_IMAGEN_PRODUCTO pero el API todavia no la recibe *@
+        <div class="col-12">
+            <label class="LenEtiqueta" for="TextoAlternativo">
+                Descripci&oacute;n de la imagen, para lectores de pantalla
+            </label>
+            <input type="text" class="LenCampo" id="TextoAlternativo"
+                   name="TextoAlternativo" maxlength="150"
+                   placeholder="Ej. collar de mostacilla azul con dije de luna">
+        </div>
+    </form>
+</div>
+
+
+@if (Model.Imagenes.Count > 0)
+{
+    <div class="row g-3">
+        @foreach (var imagen in Model.Imagenes)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="LenPanel p-0 h-100 overflow-hidden">
+                    @* Al hacer clic se abre la imagen completa en el visor de len.js *@
+                    <div class="LenMarcador LenMarcador--Apaisado">
+                        @if (imagen.RutaImagen is not null)
+                        {
+                            <img src="~/imagenes/@imagen.RutaImagen"
+                                 alt="@(imagen.TextoAlternativo ?? Model.NombreProducto)">
+                        }
+                        else
+                        {
+                            @:Imagen del producto
+                        }
+                    </div>
+                    <div class="p-3 d-flex flex-column gap-2">
+                        @if (imagen.EsPrincipal)
+                        {
+                            <span class="LenBadge LenBadge--Exito align-self-start">
+                                <i class="bi bi-star-fill" aria-hidden="true"></i> Principal
+                            </span>
+                        }
+                        else
+                        {
+                            <form method="post" action="/Producto/MarcarPrincipal">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@imagen.IdImagen">
+                                <input type="hidden" name="idProducto" value="@Model.IdProducto">
+                                <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno LenBoton--Bloque">
+                                    Marcar como principal
+                                </button>
+                            </form>
+                        }
+
+                        <form method="post" action="/Producto/EliminarImagen">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@imagen.IdImagen">
+                            <input type="hidden" name="idProducto" value="@Model.IdProducto">
+                            <button type="submit" class="LenBoton LenBoton--PeligroContorno LenBoton--Pequeno LenBoton--Bloque">
+                                <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "Este producto a&uacute;n no tiene im&aacute;genes",
+        Texto = "Suba al menos una imagen para mostrarla en el cat&aacute;logo.",
+        Clases = "mt-4" })" />
+}

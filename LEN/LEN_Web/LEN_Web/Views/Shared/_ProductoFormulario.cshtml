@@ -1,0 +1,116 @@
+@*
+Formulario de producto. Lo comparten ProductoCrear y ProductoEditar, como ya lo
+anotaba la plantilla: los dos campos son los mismos y lo que cambia lo decide EsEdicion
+Aca si se usa asp-for: las propiedades son de primer nivel y genera los name del
+contrato tal cual. En las casillas genera ademas el oculto en false que hace falta
+Precio y Stock llevan type number a mano: asp-for solo no lo pone
+*@
+@model ProductoFormViewModel
+@{
+    // El valor del precio va con punto decimal o un campo number no lo acepta.
+    // Es lo que resolvia el oculto __Invariant que se quito mas abajo
+    var precioCampo = Model.Precio?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+}
+
+<div class="LenPanel LenPanel--Formulario">
+    <form method="post" action="@Model.Accion">
+        @Html.AntiForgeryToken()
+
+        @if (Model.EsEdicion)
+        {
+            <input type="hidden" asp-for="IdProducto">
+        }
+
+        @* Aqui cae el mensaje del THROW 50000 del procedimiento *@
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel {
+                Titulo = "Revise los datos del producto.",
+                Variante = VarianteAviso.Aviso,
+                Clases = "mb-4" })" />
+        }
+
+        <div class="row g-3">
+
+            <div class="col-12 col-md-8">
+                <label class="LenEtiqueta" asp-for="NombreProducto">Nombre del producto</label>
+                <input type="text" class="LenCampo" asp-for="NombreProducto" maxlength="150" required>
+                <span class="LenError" asp-validation-for="NombreProducto"></span>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label class="LenEtiqueta" asp-for="IdCategoria">Categor&iacute;a</label>
+                <select class="LenCampo" asp-for="IdCategoria" required>
+                    @if (!Model.EsEdicion)
+                    {
+                        <option value="">Seleccione una categor&iacute;a</option>
+                    }
+                    @foreach (var categoria in Model.Categorias)
+                    {
+                        <option value="@categoria.IdCategoria"
+                                selected="@(categoria.IdCategoria == Model.IdCategoria)">@categoria.Nombre</option>
+                    }
+                </select>
+                <span class="LenError" asp-validation-for="IdCategoria"></span>
+            </div>
+
+            <div class="col-12">
+                <label class="LenEtiqueta" asp-for="Descripcion">
+                    Descripci&oacute;n <span class="LenEtiqueta-Opcional">(opcional)</span>
+                </label>
+                <textarea class="LenCampo" asp-for="Descripcion" rows="4"></textarea>
+            </div>
+
+            @* Estos dos van con name a mano y no con asp-for: en un campo numerico
+               el tag helper agrega un oculto __Invariant que el contrato no tiene *@
+            <div class="col-6 col-md-3">
+                <label class="LenEtiqueta" for="Precio">Precio</label>
+                <div class="LenCampoGrupo">
+                    <span class="LenCampoGrupo-Prefijo">&#8353;</span>
+                    <input type="number" class="LenCampo" id="Precio" name="Precio"
+                           step="0.01" min="0" value="@precioCampo" required>
+                </div>
+                <span class="LenError" asp-validation-for="Precio"></span>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <label class="LenEtiqueta" for="Stock">Stock</label>
+                <input type="number" class="LenCampo" id="Stock" name="Stock"
+                       min="0" value="@Model.Stock" required>
+                <span class="LenError" asp-validation-for="Stock"></span>
+            </div>
+
+            <div class="col-6 col-md-3 d-flex align-items-end">
+                <div class="LenOpcion mb-0">
+                    <input type="checkbox" asp-for="EsPiezaUnica">
+                    <label asp-for="EsPiezaUnica">Es pieza &uacute;nica</label>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3 d-flex align-items-end">
+                <div class="LenOpcion mb-0">
+                    <input type="checkbox" asp-for="Destacado">
+                    <label asp-for="Destacado">Mostrar en portada</label>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.EsEdicion)
+        {
+            @* El estado solo se muestra. Se cambia desde la tabla de productos *@
+            <p class="LenAyuda mt-4">
+                Estado actual: <span class="LenBadge @Model.ClaseCssEstado">@Model.EstadoVisible</span>
+                Se cambia con el bot&oacute;n de activar o desactivar de la lista de productos.
+            </p>
+        }
+        else
+        {
+            <span class="LenAyuda mt-3">Al marcar "Es pieza &uacute;nica" el stock no puede pasar de 1.</span>
+        }
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <button type="submit" class="LenBoton LenBoton--Principal">@Model.TextoBoton</button>
+            <a class="LenBoton LenBoton--Secundario" asp-controller="Admin" asp-action="Productos">Cancelar</a>
+        </div>
+    </form>
+</div>

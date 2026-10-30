@@ -1,0 +1,21 @@
+@*
+Ruta de migas. Sale en 6 pantallas de admin
+La ultima no lleva url y es la que se marca con aria-current: es la pagina abierta
+*@
+@model List<MigaViewModel>
+
+<nav aria-label="Ruta">
+    <ol class="LenMigas">
+        @foreach (var miga in Model)
+        {
+            if (miga.Url is not null)
+            {
+                <li><a href="@miga.Url">@Html.Raw(miga.Texto)</a></li>
+            }
+            else
+            {
+                <li aria-current="page">@Html.Raw(miga.Texto)</li>
+            }
+        }
+    </ol>
+</nav>

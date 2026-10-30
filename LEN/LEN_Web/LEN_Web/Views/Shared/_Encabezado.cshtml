@@ -1,0 +1,53 @@
+@*
+Encabezado de pantalla. Las 14 de admin abren con titulo, texto y accion
+Las acciones son enlace o boton que abre modal: las dos unicas formas que usan las
+pantallas. Por eso van como lista de datos y no como marcado suelto
+Sin acciones no se pinta el bloque de la derecha
+*@
+@model EncabezadoViewModel
+
+<div class="LenEncabezado">
+    <div>
+        @if (Model.Subtitulo is not null)
+        {
+            <p class="LenSubtitulo mb-1">@Html.Raw(Model.Subtitulo)</p>
+        }
+
+        <h1 class="LenEncabezado-Titulo">@Html.Raw(Model.Titulo)</h1>
+
+        @if (Model.Texto is not null)
+        {
+            <p class="LenEncabezado-Texto">@Html.Raw(Model.Texto)</p>
+        }
+    </div>
+
+    @if (Model.Acciones.Count > 0)
+    {
+        <div class="LenEncabezado-Acciones">
+            @foreach (var accion in Model.Acciones)
+            {
+                if (accion.ModalObjetivo is not null)
+                {
+                    <button type="button" class="@accion.Clase"
+                            data-bs-toggle="modal" data-bs-target="@accion.ModalObjetivo">
+                        @if (accion.Icono is not null)
+                        {
+                            <i class="bi bi-@accion.Icono" aria-hidden="true"></i>
+                        }
+                        @Html.Raw(accion.Texto)
+                    </button>
+                }
+                else
+                {
+                    <a class="@accion.Clase" href="@accion.Url">
+                        @if (accion.Icono is not null)
+                        {
+                            <i class="bi bi-@accion.Icono" aria-hidden="true"></i>
+                        }
+                        @Html.Raw(accion.Texto)
+                    </a>
+                }
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,26 @@
+@*
+Tarjeta de indicador del panel. Es la pieza mas repetida: 16 copias entre Tablero,
+Pagos, Usuarios y Reportes
+La columna la pone la vista, la parcial solo arma el article
+El pie se vuelve enlace cuando trae url. Atencion lo pinta en rojo y no es
+decoracion: avisa que hay algo que revisar
+*@
+@model IndicadorViewModel
+
+<article class="LenIndicador @(Model.Atencion ? "LenIndicador--Atencion" : null)">
+    <div class="LenIndicador-Encabezado">
+        <span class="LenSubtitulo">@Html.Raw(Model.Rotulo)</span>
+        <i class="bi bi-@Model.Icono" aria-hidden="true"></i>
+    </div>
+    <span class="LenIndicador-Valor">@Html.Raw(Model.Valor)</span>
+    <span class="LenIndicador-Pie">
+        @if (Model.UrlPie is not null)
+        {
+            <a class="LenEnlace" href="@Model.UrlPie">@Html.Raw(Model.Pie)</a>
+        }
+        else
+        {
+            @Html.Raw(Model.Pie)
+        }
+    </span>
+</article>

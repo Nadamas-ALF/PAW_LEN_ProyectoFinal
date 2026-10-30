@@ -1,0 +1,31 @@
+@*
+Nuevo producto. Origen Admin/ProductoCrear.html. Layout _LayoutAdmin. Solo Administrador
+El formulario esta en la parcial _ProductoFormulario, compartida con ProductoEditar
+Las imagenes se cargan despues en ProductoImagenes porque necesitan el IdProducto
+POST a Producto/Crear. El procedimiento rechaza pieza unica con stock mayor a 1
+*@
+@model ProductoFormViewModel
+@{
+    ViewData["Titulo"] = "Nuevo producto";
+}
+
+<partial name="_Migas" model="@(new List<MigaViewModel> {
+    new() { Texto = "Principal", Url = Url.Action("Tablero", "Admin") },
+    new() { Texto = "Productos", Url = Url.Action("Productos", "Admin") },
+    new() { Texto = "Nuevo producto" },
+})" />
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Nuevo producto",
+    Texto = "Complete los datos del producto. Luego podr&aacute; agregar sus im&aacute;genes." })" />
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<partial name="_ProductoFormulario" model="Model" />

@@ -22,12 +22,26 @@ namespace LEN_Web.Utilidades
     {
         public const int ProductosPorPagina = 8;
 
+        // Solo las activas: el menu publico y los filtros no listan una categoria
+        // dada de baja
         public static (int IdCategoria, string Nombre)[] CategoriasMenu =>
+            CategoriasEjemplo
+                .Where(categoria => categoria.Activo)
+                .Select(categoria => (categoria.Id, categoria.Nombre))
+                .ToArray();
+
+        private record CategoriaEjemplo(int Id, string Nombre, string? Descripcion, bool Activo = true);
+
+        // La quinta esta de baja y sin productos a proposito: es el unico estado
+        // que la pantalla de categorias no podria mostrar de otra forma, porque
+        // una categoria con productos activos no se puede desactivar
+        private static readonly CategoriaEjemplo[] CategoriasEjemplo =
         [
-            (1, "Collares"),
-            (2, "Pulseras"),
-            (3, "Llaveros"),
-            (4, "Aretes"),
+            new(1, "Collares", "Collares artesanales tejidos a mano"),
+            new(2, "Pulseras", "Pulseras y charms para bolso"),
+            new(3, "Llaveros", null),
+            new(4, "Aretes", "Aretes de temporada"),
+            new(5, "Dijes", "Dijes sueltos para armar", Activo: false),
         ];
 
         // ----------------------------------------------------------------
@@ -37,7 +51,9 @@ namespace LEN_Web.Utilidades
         public static PortadaViewModel Portada(IWebHostEnvironment entorno) => new()
         {
             Destacados = Catalogo
-                .Where(producto => producto.ArchivoDestacado is not null)
+                .Where(producto => producto.Activo
+                    && producto.Destacado
+                    && producto.ArchivoDestacado is not null)
                 .Select(producto => new ProductoDestacado
                 {
                     IdProducto = producto.Id,
@@ -49,6 +65,7 @@ namespace LEN_Web.Utilidades
                 .ToList(),
 
             Productos = Catalogo
+                .Where(producto => producto.Activo)
                 .Take(4)
                 .Select(producto => Resumen(entorno, producto))
                 .ToList(),
@@ -65,7 +82,8 @@ namespace LEN_Web.Utilidades
             string? color,
             int pagina)
         {
-            var encontrados = Catalogo.AsEnumerable();
+            // Un producto dado de baja no sale en el catalogo publico
+            var encontrados = Catalogo.Where(producto => producto.Activo);
 
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
@@ -114,7 +132,8 @@ namespace LEN_Web.Utilidades
         // una pagina vacia
         public static ProductoDetalleViewModel? Detalle(IWebHostEnvironment entorno, int idProducto)
         {
-            var producto = Catalogo.FirstOrDefault(fila => fila.Id == idProducto);
+            // Tampoco se puede abrir el detalle de uno dado de baja
+            var producto = Catalogo.FirstOrDefault(fila => fila.Id == idProducto && fila.Activo);
 
             if (producto is null)
             {
@@ -444,6 +463,254 @@ namespace LEN_Web.Utilidades
         }
 
         // ----------------------------------------------------------------
+        // Panel: tablero
+        // ----------------------------------------------------------------
+
+        // Las ventas y los pedidos del tablero son de toda la tienda, no de una
+        // cuenta: por eso no cuadran con los cuatro pedidos del historial de Ana
+        public static TableroViewModel Tablero()
+        {
+            var ventas = VentasDelAnio();
+
+            return new TableroViewModel
+            {
+                TotalVentas = ventas.Sum(venta => venta.Total),
+                TotalPedidos = 37,
+                PedidosPorPreparar = 8,
+                TotalClientesActivos = 18,
+                TotalProductosAgotados = Catalogo.Count(producto => producto.Activo && producto.Stock == 0),
+                VentasMensuales = ventas,
+                ActividadesRecientes =
+                [
+                    new()
+                    {
+                        Titulo = "Pedido #37",
+                        Descripcion = "Luis Castro Pineda realizo un pedido por " + FormatoMoneda.Colones(18400m),
+                        Fecha = new DateTime(2026, 9, 26, 10, 14, 0),
+                        Tipo = "Entregado",
+                        ClaseCssEstado = "estado-pedido-entregado",
+                    },
+                    new()
+                    {
+                        Titulo = "Pedido #36",
+                        Descripcion = "Ana Mora Jimenez realizo un pedido por " + FormatoMoneda.Colones(25000m),
+                        Fecha = new DateTime(2026, 9, 25, 16, 2, 0),
+                        Tipo = "En preparacion",
+                        ClaseCssEstado = "estado-pedido-preparacion",
+                    },
+                    new()
+                    {
+                        Titulo = "Pedido #35",
+                        Descripcion = "Sofia Ramirez Leon realizo un pedido por " + FormatoMoneda.Colones(4500m),
+                        Fecha = new DateTime(2026, 9, 24, 9, 31, 0),
+                        Tipo = "Cancelado",
+                        ClaseCssEstado = "estado-pedido-cancelado",
+                    },
+                ],
+            };
+        }
+
+        // Los doce meses siempre, con cero donde no hubo ventas. El porcentaje se
+        // calcula contra el mes mas alto y se redondea a pasos de 5, con minimo 5
+        // si hubo alguna venta: asi diciembre no se ve igual que octubre
+        private static List<VentaMensual> VentasDelAnio()
+        {
+            var meses = new[] { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
+            var totales = new[] { 42000m, 58000m, 71500m, 64000m, 88300m, 121000m, 96500m, 103000m, 79000m, 0m, 0m, 2500m };
+            var mayor = totales.Max();
+
+            return meses
+                .Select((mes, indice) => new VentaMensual
+                {
+                    Mes = mes,
+                    Total = totales[indice],
+                    Porcentaje = PorcentajeBarra(totales[indice], mayor),
+                })
+                .ToList();
+        }
+
+        private static int PorcentajeBarra(decimal total, decimal mayor)
+        {
+            if (total <= 0 || mayor <= 0)
+            {
+                return 0;
+            }
+
+            var crudo = (double)(total / mayor) * 100;
+            var paso = (int)Math.Round(crudo / 5, MidpointRounding.AwayFromZero) * 5;
+
+            return Math.Max(5, paso);
+        }
+
+        // ----------------------------------------------------------------
+        // Panel: productos
+        // ----------------------------------------------------------------
+
+        public const int ProductosAdminPorPagina = 8;
+
+        // Umbral por defecto de SP_Producto_ListarBajoStock
+        public const int UmbralBajoStock = 3;
+
+        public static ListadoProductosViewModel ProductosAdmin(
+            IWebHostEnvironment entorno,
+            string? busqueda,
+            int? idCategoria,
+            int pagina)
+        {
+            // El panel si ve los dados de baja: es el unico lugar donde se pueden
+            // volver a activar
+            var encontrados = Catalogo.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                encontrados = encontrados.Where(producto =>
+                    producto.Nombre.Contains(busqueda.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (idCategoria.HasValue)
+            {
+                encontrados = encontrados.Where(producto => producto.IdCategoria == idCategoria.Value);
+            }
+
+            var lista = encontrados.ToList();
+            var totalPaginas = Math.Max(1, (int)Math.Ceiling(lista.Count / (double)ProductosAdminPorPagina));
+            var paginaSegura = Math.Clamp(pagina, 1, totalPaginas);
+
+            return new ListadoProductosViewModel
+            {
+                Busqueda = busqueda,
+                IdCategoria = idCategoria,
+                PaginaActual = paginaSegura,
+                TotalPaginas = totalPaginas,
+                Categorias = CategoriasActivas(),
+                Productos = lista
+                    .Skip((paginaSegura - 1) * ProductosAdminPorPagina)
+                    .Take(ProductosAdminPorPagina)
+                    .Select(producto => FilaAdmin(entorno, producto))
+                    .ToList(),
+
+                // La alerta mira todo el catalogo, no solo la pagina abierta: si
+                // solo contara la pagina, el aviso cambiaria al paginar
+                AlertasBajoStock = Catalogo
+                    .Where(producto => producto.Activo && producto.Stock <= UmbralBajoStock)
+                    .Select(producto => new AlertaStock
+                    {
+                        NombreProducto = producto.Nombre,
+                        Stock = producto.Stock,
+                    })
+                    .ToList(),
+            };
+        }
+
+        public static List<CategoriaOpcion> CategoriasActivas() =>
+            CategoriasEjemplo
+                .Where(categoria => categoria.Activo)
+                .Select(categoria => new CategoriaOpcion
+                {
+                    IdCategoria = categoria.Id,
+                    Nombre = categoria.Nombre,
+                })
+                .ToList();
+
+        public static ProductoFormViewModel FormularioNuevo() => new()
+        {
+            Categorias = CategoriasActivas(),
+        };
+
+        // Null si el producto no existe. Aca si se devuelve uno dado de baja: el
+        // panel tiene que poder editarlo
+        public static ProductoFormViewModel? FormularioDe(int idProducto)
+        {
+            var producto = Catalogo.FirstOrDefault(fila => fila.Id == idProducto);
+
+            if (producto is null)
+            {
+                return null;
+            }
+
+            var fila = new ProductoAdmin
+            {
+                Stock = producto.Stock,
+                Activo = producto.Activo,
+            };
+
+            return new ProductoFormViewModel
+            {
+                IdProducto = producto.Id,
+                NombreProducto = producto.Nombre,
+                IdCategoria = producto.IdCategoria,
+                Descripcion = producto.Descripcion,
+                Precio = producto.Precio,
+                Stock = producto.Stock,
+                EsPiezaUnica = producto.EsPiezaUnica,
+                Destacado = producto.Destacado,
+                Categorias = CategoriasActivas(),
+                EsEdicion = true,
+                EstadoVisible = fila.EstadoVisible,
+                ClaseCssEstado = fila.ClaseCssEstado,
+            };
+        }
+
+        // Las imagenes salen de los archivos del producto. La primera es la
+        // principal, como el indice de la base obliga
+        public static ImagenesProductoViewModel? ImagenesDe(IWebHostEnvironment entorno, int idProducto)
+        {
+            var producto = Catalogo.FirstOrDefault(fila => fila.Id == idProducto);
+
+            if (producto is null)
+            {
+                return null;
+            }
+
+            return new ImagenesProductoViewModel
+            {
+                IdProducto = producto.Id,
+                NombreProducto = producto.Nombre,
+                Imagenes = producto.Archivos
+                    .Select((archivo, indice) => new ImagenProducto
+                    {
+                        IdImagen = (producto.Id * 10) + indice + 1,
+                        RutaImagen = Imagen(entorno, archivo),
+                        EsPrincipal = indice == 0,
+                    })
+                    .ToList(),
+            };
+        }
+
+        // ----------------------------------------------------------------
+        // Panel: categorias
+        // ----------------------------------------------------------------
+
+        // Las dos cuentas se calculan del catalogo: escritas a mano se
+        // despegarian de la tabla de productos en cuanto cambie un producto
+        public static List<CategoriaAdmin> CategoriasAdmin() =>
+            CategoriasEjemplo
+                .Select(categoria => new CategoriaAdmin
+                {
+                    IdCategoria = categoria.Id,
+                    Nombre = categoria.Nombre,
+                    Descripcion = categoria.Descripcion,
+                    Activo = categoria.Activo,
+                    CantidadProductos = Catalogo.Count(producto => producto.IdCategoria == categoria.Id),
+                    CantidadProductosActivos = Catalogo.Count(producto =>
+                        producto.IdCategoria == categoria.Id && producto.Activo),
+                })
+                .ToList();
+
+        private static ProductoAdmin FilaAdmin(IWebHostEnvironment entorno, ProductoEjemplo producto) => new()
+        {
+            IdProducto = producto.Id,
+            NombreProducto = producto.Nombre,
+            NombreCategoria = producto.Categoria,
+            Precio = producto.Precio,
+            Stock = producto.Stock,
+            EsPiezaUnica = producto.EsPiezaUnica,
+            Destacado = producto.Destacado,
+            Activo = producto.Activo,
+            RutaImagen = producto.Archivos.Length == 0 ? null : Imagen(entorno, producto.Archivos[0]),
+        };
+
+        // ----------------------------------------------------------------
         // Apoyo
         // ----------------------------------------------------------------
 
@@ -476,7 +743,11 @@ namespace LEN_Web.Utilidades
             string? Descripcion,
             string[] Archivos,
             string? ArchivoDestacado,
-            VarianteProducto[] Variantes);
+            VarianteProducto[] Variantes,
+            // Los dos ultimos son del panel. Activo en false saca al producto del
+            // catalogo publico pero lo deja visible en la tabla de productos
+            bool Activo = true,
+            bool Destacado = false);
 
         // Diez productos a proposito: con ocho por pagina el catalogo queda en dos
         // paginas y se puede ver la paginacion funcionando
@@ -490,14 +761,17 @@ namespace LEN_Web.Utilidades
                     new VarianteProducto { IdVariante = 1, Color = "Rosado", Stock = 4 },
                     new VarianteProducto { IdVariante = 2, Color = "Azul", Stock = 3 },
                     new VarianteProducto { IdVariante = 3, Color = "Negro", Talla = "Grande", Stock = 0 },
-                ]),
+                ], Destacado: true),
 
+            // Dado de baja. Sale en la tabla del panel y no en el catalogo, y el
+            // pedido FAC-000009 lo sigue conteniendo: una baja no borra historia
             new(2, "Collar Pato", 1, "Collares", 7000m, 5, false,
                 "Collar corto con dije de pato en arcilla polimerica, hecho y pintado a mano.",
                 ["producto-collar-pato.jpeg"], null,
                 [
                     new VarianteProducto { IdVariante = 4, Color = "Amarillo", Stock = 5 },
-                ]),
+                ],
+                Activo: false),
 
             new(3, "Pulsera de Perlas", 2, "Pulseras", 5500m, 12, false,
                 "Pulsera de perlas de rio con broche de acero quirurgico.",
@@ -506,7 +780,7 @@ namespace LEN_Web.Utilidades
                 [
                     new VarianteProducto { IdVariante = 5, Talla = "Pequena", Stock = 6 },
                     new VarianteProducto { IdVariante = 6, Talla = "Mediana", Stock = 6 },
-                ]),
+                ], Destacado: true),
 
             new(4, "Llavero Flor", 3, "Llaveros", 2500m, 0, false,
                 "Llavero con flor tejida en crochet y argolla reforzada.",
@@ -517,9 +791,10 @@ namespace LEN_Web.Utilidades
                 [], "destacado-aretes-luna.jpeg",
                 [
                     new VarianteProducto { IdVariante = 7, Color = "Dorado", Stock = 4 },
-                ]),
+                ], Destacado: true),
 
-            new(6, "Collar Trenzado", 1, "Collares", 9200m, 3, true,
+            // Stock 1 y no mas: CK_Producto_PiezaUnicaStock no admite otra cosa
+            new(6, "Collar Trenzado", 1, "Collares", 9200m, 1, true,
                 "Pieza unica: collar trenzado en hilo encerado con cuentas de vidrio sopladas a mano.",
                 [], null, []),
 

@@ -26,6 +26,59 @@ namespace LEN_Web.Models
         public string? Clases { get; set; }
     }
 
+    public class IndicadorViewModel
+    {
+        public string Rotulo { get; set; } = string.Empty;
+
+        // Nombre del icono de Bootstrap, sin el prefijo bi-
+        public string Icono { get; set; } = string.Empty;
+
+        public string Valor { get; set; } = string.Empty;
+
+        public string Pie { get; set; } = string.Empty;
+
+        // Con url el pie se vuelve enlace. Solo el de productos agotados lo usa
+        public string? UrlPie { get; set; }
+
+        // El de agotados va en rojo: no es decoracion, avisa que hay que actuar
+        public bool Atencion { get; set; }
+    }
+
+    public class AccionEncabezado
+    {
+        public string Texto { get; set; } = string.Empty;
+
+        public string? Icono { get; set; }
+
+        // Una de las dos: con Url sale un enlace, con ModalObjetivo un boton que
+        // abre la modal. Las 14 pantallas de admin usan solo esas dos formas
+        public string? Url { get; set; }
+
+        public string? ModalObjetivo { get; set; }
+
+        public string Clase { get; set; } = "LenBoton LenBoton--Secundario";
+    }
+
+    public class EncabezadoViewModel
+    {
+        // Solo el Tablero lo lleva
+        public string? Subtitulo { get; set; }
+
+        public string Titulo { get; set; } = string.Empty;
+
+        public string? Texto { get; set; }
+
+        public List<AccionEncabezado> Acciones { get; set; } = new();
+    }
+
+    public class MigaViewModel
+    {
+        public string Texto { get; set; } = string.Empty;
+
+        // La ultima miga no lleva url: es la pagina abierta
+        public string? Url { get; set; }
+    }
+
     public class FilaDato
     {
         public string Etiqueta { get; set; } = string.Empty;

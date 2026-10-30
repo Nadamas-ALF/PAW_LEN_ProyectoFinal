@@ -10,7 +10,22 @@ namespace LEN_Web.Utilidades
         public static string Colones(decimal monto)
         {
             var partes = monto.ToString("N2", CultureInfo.InvariantCulture).Split('.');
-            var digitos = partes[0].Replace(",", string.Empty);
+
+            return $"₡{Agrupado(partes[0])},{partes[1]}";
+        }
+
+        // Los indicadores del tablero y los titulos del grafico van sin decimales
+        public static string ColonesSinDecimales(decimal monto)
+        {
+            var redondeado = Math.Round(monto, MidpointRounding.AwayFromZero)
+                .ToString("N0", CultureInfo.InvariantCulture);
+
+            return $"₡{Agrupado(redondeado)}";
+        }
+
+        private static string Agrupado(string parteEntera)
+        {
+            var digitos = parteEntera.Replace(",", string.Empty);
 
             var entero = new StringBuilder();
             for (var i = 0; i < digitos.Length; i++)
@@ -22,7 +37,7 @@ namespace LEN_Web.Utilidades
                 entero.Append(digitos[i]);
             }
 
-            return $"₡{entero},{partes[1]}";
+            return entero.ToString();
         }
     }
 }

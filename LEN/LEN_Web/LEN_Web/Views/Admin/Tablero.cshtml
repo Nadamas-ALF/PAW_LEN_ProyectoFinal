@@ -1,0 +1,155 @@
+@*
+Panel principal. Origen Admin/Tablero.html. Layout _LayoutAdmin. Solo Administrador
+Datos de TableroViewModel mientras no existan los tres SP_Tablero_*
+Cuatro indicadores, grafico de ventas por mes y actividad reciente
+La clase de la barra sale del porcentaje que calcula el modelo, en pasos de 5
+El color del punto de actividad sale de TB_ESTADO_PEDIDO.ClaseCss
+*@
+@model TableroViewModel
+@{
+    ViewData["Titulo"] = "Panel principal";
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Subtitulo = "Resumen general",
+    Titulo = "Panel principal",
+    Texto = "Consulta el estado general de productos, pedidos, clientes y ventas.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Ver reportes",
+            Icono = "graph-up",
+            Url = "/Admin/Reportes",
+            Clase = "LenBoton LenBoton--Grafito" },
+    ] })" />
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Error,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+<section class="row g-4 mb-4" aria-label="Indicadores principales">
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Ventas",
+            Icono = "currency-dollar",
+            Valor = FormatoMoneda.ColonesSinDecimales(Model.TotalVentas),
+            Pie = "Ventas registradas" })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Pedidos",
+            Icono = "bag-check",
+            Valor = Model.TotalPedidos.ToString(),
+            Pie = $"{Model.PedidosPorPreparar} por preparar" })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Clientes",
+            Icono = "people",
+            Valor = Model.TotalClientesActivos.ToString(),
+            Pie = "Clientes activos" })" />
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <partial name="_Indicador" model="@(new IndicadorViewModel {
+            Rotulo = "Productos agotados",
+            Icono = "exclamation-triangle",
+            Valor = Model.TotalProductosAgotados.ToString(),
+            Pie = "Requieren revisi&oacute;n",
+            UrlPie = Url.Action("Productos", "Admin"),
+            Atencion = true })" />
+    </div>
+</section>
+
+
+<section class="row g-4">
+
+    <div class="col-12 col-xl-8">
+        <article class="LenPanel h-100">
+            <h2 class="LenPanel-Titulo">
+                <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+                Rendimiento de ventas
+            </h2>
+            <p class="LenPanel-Texto">
+                Resumen mensual de las ventas registradas durante @DateTime.Now.Year.
+            </p>
+
+            @if (Model.VentasMensuales.Count > 0)
+            {
+                <div class="LenGrafico">
+                    @foreach (var venta in Model.VentasMensuales)
+                    {
+                        <div class="LenGrafico-Columna" title="@FormatoMoneda.ColonesSinDecimales(venta.Total)">
+                            <div class="LenGrafico-Zona">
+                                <div class="LenGrafico-Barra LenGrafico-Barra--@venta.Porcentaje"></div>
+                            </div>
+                            <span class="LenGrafico-Mes">@venta.Mes</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <partial name="_Vacio" model="@(new VacioViewModel {
+                    Titulo = "Sin datos de ventas",
+                    Texto = "No hay informaci&oacute;n de ventas disponible.",
+                    Clases = "LenVacio--Compacto mt-3" })" />
+            }
+        </article>
+    </div>
+
+
+    <div class="col-12 col-xl-4">
+        <article class="LenPanel h-100">
+            <h2 class="LenPanel-Titulo">
+                <i class="bi bi-activity" aria-hidden="true"></i>
+                Actividad reciente
+            </h2>
+            <p class="LenPanel-Texto">&Uacute;ltimas actualizaciones del sistema.</p>
+
+            @if (Model.ActividadesRecientes.Count > 0)
+            {
+                <ul class="LenActividad">
+                    @foreach (var actividad in Model.ActividadesRecientes)
+                    {
+                        <li class="LenActividad-Item">
+                            <span class="LenPunto @actividad.ClaseCssEstado" aria-hidden="true"></span>
+                            <div>
+                                <p class="LenActividad-Titulo">@actividad.Titulo</p>
+                                <p class="LenActividad-Texto">@actividad.Descripcion</p>
+                                <small class="LenActividad-Fecha">
+                                    @actividad.Fecha.ToString("dd/MM/yyyy hh:mm tt", new System.Globalization.CultureInfo("es-CR"))
+                                    &middot; @actividad.Tipo
+                                </small>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <partial name="_Vacio" model="@(new VacioViewModel {
+                    Titulo = "Sin actividad reciente",
+                    Texto = "Las acciones recientes aparecer&aacute;n aqu&iacute;.",
+                    Clases = "LenVacio--Compacto mt-3" })" />
+            }
+        </article>
+    </div>
+</section>

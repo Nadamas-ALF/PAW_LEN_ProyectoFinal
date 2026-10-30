@@ -1,0 +1,205 @@
+@*
+Gestion de categorias. Origen Admin/Categorias.html. Layout _LayoutAdmin. Solo Administrador
+Datos de List<CategoriaAdmin> mientras no exista SP_Categoria_Listar. Sin filtros ni paginacion
+Una modal para crear y una sola compartida para editar: los data- del boton de la
+fila los copia len.js a los campos, asi que esos campos nacen vacios
+No se desactiva una categoria con productos activos, y la columna Productos lo avisa antes
+*@
+@model List<CategoriaAdmin>
+@{
+    ViewData["Titulo"] = "Categor&iacute;as";
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Gesti&oacute;n de categor&iacute;as",
+    Texto = "Categor&iacute;as que organizan el cat&aacute;logo de la tienda.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Nueva categor&iacute;a",
+            Icono = "plus-lg",
+            ModalObjetivo = "#CrearCategoria",
+            Clase = "LenBoton LenBoton--Principal" },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (Model.Count > 0)
+{
+    <div class="LenPanel LenTabla-Envoltura p-0">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Descripci&oacute;n</th>
+                    <th scope="col" class="text-center">Productos</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var categoria in Model)
+                {
+                    <tr class="@(categoria.Activo ? null : "LenTabla-Inactiva")">
+                        <td><strong>@categoria.Nombre</strong></td>
+                        <td class="LenSuave">
+                            @if (!string.IsNullOrWhiteSpace(categoria.Descripcion))
+                            {
+                                @categoria.Descripcion
+                            }
+                            else
+                            {
+                                @:&mdash;
+                            }
+                        </td>
+                        <td class="text-center">
+                            @categoria.CantidadProductos
+                            <span class="LenSuave">(@categoria.CantidadProductosActivos activos)</span>
+                        </td>
+                        <td class="text-center">
+                            @if (categoria.Activo)
+                            {
+                                <span class="LenBadge LenBadge--Exito">Activa</span>
+                            }
+                            else
+                            {
+                                <span class="LenBadge LenBadge--Neutro">Inactiva</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="LenTabla-Acciones">
+                                <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                        title="Editar categor&iacute;a" aria-label="Editar categor&iacute;a"
+                                        data-bs-toggle="modal" data-bs-target="#EditarCategoria"
+                                        data-id="@categoria.IdCategoria" data-nombre="@categoria.Nombre"
+                                        data-descripcion="@categoria.Descripcion">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+
+                                <form class="m-0" method="post" action="/Categoria/CambiarActivo">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@categoria.IdCategoria">
+                                    @if (categoria.Activo)
+                                    {
+                                        <button type="submit" class="LenBoton LenBoton--PeligroContorno LenBoton--Icono"
+                                                title="Desactivar" aria-label="Desactivar">
+                                            <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                                title="Activar" aria-label="Activar">
+                                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                                        </button>
+                                    }
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "A&uacute;n no hay categor&iacute;as registradas",
+        Texto = "Cree la primera categor&iacute;a para comenzar a organizar el cat&aacute;logo.",
+        Clases = "mt-4" })" />
+}
+
+
+<div class="modal fade LenModal" id="CrearCategoria" tabindex="-1" aria-labelledby="TituloCrearCategoria" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Categoria/Crear">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloCrearCategoria">Nueva categor&iacute;a</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="LenEtiqueta" for="CrearNombre">Nombre</label>
+                        <input type="text" class="LenCampo" id="CrearNombre" name="Nombre"
+                               maxlength="100" required>
+                    </div>
+                    <div>
+                        <label class="LenEtiqueta" for="CrearDescripcion">
+                            Descripci&oacute;n <span class="LenEtiqueta-Opcional">(opcional)</span>
+                        </label>
+                        <textarea class="LenCampo" id="CrearDescripcion" name="Descripcion"
+                                  rows="3" maxlength="255"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar categor&iacute;a</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@* Una sola modal para editar. Nace vacia a proposito: los campos los llena len.js
+   con los data- del boton de la fila. Con un valor fijo aca se editaria siempre
+   la misma categoria *@
+<div class="modal fade LenModal" id="EditarCategoria" tabindex="-1" aria-labelledby="TituloEditarCategoria" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Categoria/Editar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdCategoria" value="">
+
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloEditarCategoria">Editar categor&iacute;a</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="LenEtiqueta" for="EditarNombre">Nombre</label>
+                        <input type="text" class="LenCampo" id="EditarNombre" name="Nombre"
+                               maxlength="100" required>
+                    </div>
+                    <div>
+                        <label class="LenEtiqueta" for="EditarDescripcion">
+                            Descripci&oacute;n <span class="LenEtiqueta-Opcional">(opcional)</span>
+                        </label>
+                        <textarea class="LenCampo" id="EditarDescripcion" name="Descripcion"
+                                  rows="3" maxlength="255"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

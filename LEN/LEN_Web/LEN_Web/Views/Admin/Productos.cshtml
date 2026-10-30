@@ -1,0 +1,215 @@
+@*
+Gestion de productos. Origen Admin/Productos.html. Layout _LayoutAdmin. Solo Administrador
+Datos de ListadoProductosViewModel mientras no exista SP_Producto_Listar
+El panel si ve los dados de baja: es el unico lugar donde se vuelven a activar
+El estado tiene tres valores y los calcula el modelo, no la vista
+Cada fila lleva su propio formulario de stock para ajustarlo sin salir de la tabla
+*@
+@model ListadoProductosViewModel
+@{
+    ViewData["Titulo"] = "Gesti&oacute;n de productos";
+
+    var filtros = new Dictionary<string, string?>
+    {
+        ["busqueda"] = Model.Busqueda,
+        ["idCategoria"] = Model.IdCategoria?.ToString(),
+    };
+}
+
+<partial name="_Encabezado" model="@(new EncabezadoViewModel {
+    Titulo = "Gesti&oacute;n de productos",
+    Texto = "Cat&aacute;logo de la tienda: creaci&oacute;n, edici&oacute;n, inventario e im&aacute;genes.",
+    Acciones =
+    [
+        new AccionEncabezado {
+            Texto = "Nuevo producto",
+            Icono = "plus-lg",
+            Url = Url.Action("ProductoCrear", "Admin"),
+            Clase = "LenBoton LenBoton--Principal" },
+    ] })" />
+
+@if (TempData["MensajeExito"] is string mensajeExito)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeExito,
+        Variante = VarianteAviso.Exito,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-3" })" />
+}
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-3" })" />
+}
+
+@* La alerta mira todo el catalogo, no la pagina abierta *@
+@if (Model.AlertasBajoStock.Count > 0)
+{
+    <div class="LenAviso LenAviso--Error mb-4" role="alert">
+        <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-exclamation-triangle"></i></span>
+        <div class="LenAviso-Cuerpo">
+            <p class="LenAviso-Titulo mb-0">Alerta de bajo inventario:</p>
+            <div class="LenAviso-Chips">
+                @foreach (var alerta in Model.AlertasBajoStock)
+                {
+                    <span class="LenBadge LenBadge--Negativo">@alerta.NombreProducto (@alerta.Stock)</span>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+<form method="get" asp-controller="Admin" asp-action="Productos" class="LenFiltros mb-4">
+    <div class="LenFiltros-Principal">
+        <label class="LenEtiqueta" for="Busqueda">Buscar</label>
+        <input type="text" class="LenCampo" id="Busqueda" name="busqueda"
+               value="@Model.Busqueda" placeholder="Nombre del producto">
+    </div>
+    <div>
+        <label class="LenEtiqueta" for="IdCategoria">Categor&iacute;a</label>
+        <select class="LenCampo" id="IdCategoria" name="idCategoria">
+            <option value="">Todas</option>
+            @foreach (var categoria in Model.Categorias)
+            {
+                <option value="@categoria.IdCategoria"
+                        selected="@(categoria.IdCategoria == Model.IdCategoria)">@categoria.Nombre</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="LenBoton LenBoton--Secundario">
+        <i class="bi bi-search" aria-hidden="true"></i> Filtrar
+    </button>
+</form>
+
+
+@if (Model.Productos.Count > 0)
+{
+    <div class="LenPanel LenTabla-Envoltura p-0">
+        <table class="LenTabla">
+            <thead>
+                <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Categor&iacute;a</th>
+                    <th scope="col" class="LenTabla-Numero">Precio</th>
+                    <th scope="col" class="text-center">Stock</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var producto in Model.Productos)
+                {
+                    <tr class="@(producto.Activo ? null : "LenTabla-Inactiva")">
+                        <td>
+                            <div class="LenLineaProducto">
+                                <div class="LenMarcador LenMarcador--Pequeno">
+                                    @if (producto.RutaImagen is not null)
+                                    {
+                                        <img src="~/imagenes/@producto.RutaImagen" alt="@producto.NombreProducto">
+                                    }
+                                    else
+                                    {
+                                        @:Img
+                                    }
+                                </div>
+                                <div>
+                                    <strong>@producto.NombreProducto</strong>
+                                    @if (producto.Destacado)
+                                    {
+                                        <span class="LenBadge LenBadge--Marca ms-1">Destacado</span>
+                                    }
+                                    @if (producto.EsPiezaUnica)
+                                    {
+                                        <span class="LenBadge LenBadge--Marca ms-1">Pieza &uacute;nica</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>@producto.NombreCategoria</td>
+                        <td class="LenTabla-Numero">@FormatoMoneda.Colones(producto.Precio)</td>
+                        <td class="text-center">
+                            <form class="LenStock" method="post" action="/Producto/ActualizarStock">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@producto.IdProducto">
+                                <label class="LenSoloLectores" for="Stock@(producto.IdProducto)">
+                                    Stock de @producto.NombreProducto
+                                </label>
+                                <input type="number" class="LenCampo LenCampo--Corto text-center"
+                                       id="Stock@(producto.IdProducto)" name="stock" min="0"
+                                       max="@producto.MaximoStock" value="@producto.Stock">
+                                <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                        title="Actualizar inventario" aria-label="Actualizar inventario">
+                                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-center">
+                            <span class="LenBadge @producto.ClaseCssEstado">@producto.EstadoVisible</span>
+                        </td>
+                        <td>
+                            <div class="LenTabla-Acciones">
+                                <a class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                   asp-controller="Admin" asp-action="ProductoEditar"
+                                   asp-route-idProducto="@producto.IdProducto"
+                                   title="Editar producto" aria-label="Editar producto">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <a class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                   asp-controller="Admin" asp-action="ProductoImagenes"
+                                   asp-route-idProducto="@producto.IdProducto"
+                                   title="Im&aacute;genes del producto" aria-label="Im&aacute;genes del producto">
+                                    <i class="bi bi-images" aria-hidden="true"></i>
+                                </a>
+
+                                @* Pendiente: confirmar antes de desactivar *@
+                                <form class="m-0" method="post" action="/Producto/CambiarActivo">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@producto.IdProducto">
+                                    @if (producto.Activo)
+                                    {
+                                        <button type="submit" class="LenBoton LenBoton--PeligroContorno LenBoton--Icono"
+                                                title="Desactivar producto" aria-label="Desactivar producto">
+                                            <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Icono"
+                                                title="Activar producto" aria-label="Activar producto">
+                                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                                        </button>
+                                    }
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="@(new PaginacionViewModel {
+        PaginaActual = Model.PaginaActual,
+        TotalPaginas = Model.TotalPaginas,
+        Ruta = "/Admin/Productos",
+        Filtros = filtros })" />
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "No se encontraron productos",
+        Texto = "Ajuste los filtros o registre un nuevo producto.",
+        Clases = "mt-4" })" />
+}
