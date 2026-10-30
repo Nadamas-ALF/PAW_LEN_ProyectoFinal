@@ -1,0 +1,85 @@
+@*
+Tarjeta de producto. Sale en Portada Catalogo y Favoritos con diferencias reales
+La envoltura la imagen la cinta de agotado el nombre y el precio son iguales en las tres
+Cambian el corazon de favorito el bloque de acciones y el nivel del titulo
+El corazon y el Quitar son formularios POST porque cambian el favorito en la base
+*@
+@model TarjetaProductoViewModel
+@{
+    var urlDetalle = $"/Publico/ProductoDetalle?idProducto={Model.IdProducto}";
+    var textoFavorito = Model.EsFavorito ? "Quitar de favoritos" : "Agregar a favoritos";
+}
+
+<article class="LenProducto @(Model.Disponible ? null : "LenProducto--Agotado")">
+
+    @* El corazon solo aparece con la sesion abierta: sin usuario no hay a quien guardarle el favorito *@
+    @if (Model.Variante == VarianteTarjeta.Catalogo && User.Identity!.IsAuthenticated)
+    {
+        <form method="post" action="@(Model.EsFavorito ? "/Favorito/Eliminar" : "/Favorito/Agregar")" class="LenProducto-Favorito">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="idProducto" value="@Model.IdProducto">
+            <input type="hidden" name="urlRetorno" value="@Model.UrlRetorno">
+            <button type="submit" class="LenAccion" title="@textoFavorito" aria-label="@textoFavorito">
+                <i class="bi @(Model.EsFavorito ? "bi-heart-fill" : "bi-heart")" aria-hidden="true"></i>
+            </button>
+        </form>
+    }
+
+    <a class="LenProducto-Imagen" href="@urlDetalle" tabindex="-1" aria-hidden="true">
+        @if (!Model.Disponible)
+        {
+            <span class="LenProducto-Cinta"><span class="LenBadge LenBadge--Negativo">Agotado</span></span>
+        }
+        @if (Model.RutaImagen is not null)
+        {
+            <img src="~/imagenes/@Model.RutaImagen" alt="@Model.NombreProducto">
+        }
+        else
+        {
+            <span class="LenProducto-SinImagen">
+                <i class="bi bi-image" aria-hidden="true"></i>
+                Imagen del producto
+            </span>
+        }
+    </a>
+
+    <div>
+        <span class="LenProducto-Meta">@Model.NombreCategoria</span>
+
+        @if (Model.NivelTitulo == 2)
+        {
+            <h2 class="LenProducto-Nombre"><a href="@urlDetalle">@Model.NombreProducto</a></h2>
+        }
+        else
+        {
+            <h3 class="LenProducto-Nombre"><a href="@urlDetalle">@Model.NombreProducto</a></h3>
+        }
+
+        <span class="LenPrecio">@FormatoMoneda.Colones(Model.Precio)</span>
+
+        @if (Model.Variante == VarianteTarjeta.Portada)
+        {
+            <div class="LenProducto-Acciones">
+                @if (Model.Disponible)
+                {
+                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno" data-idproducto="@Model.IdProducto">
+                        <i class="bi bi-bag-plus" aria-hidden="true"></i> Agregar
+                    </button>
+                }
+                <a class="LenBoton LenBoton--Texto LenBoton--Pequeno" href="@urlDetalle">Ver</a>
+            </div>
+        }
+
+        @if (Model.Variante == VarianteTarjeta.Favoritos)
+        {
+            <form class="LenProducto-Acciones" method="post" action="/Favorito/Eliminar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idProducto" value="@Model.IdProducto">
+                <input type="hidden" name="urlRetorno" value="@Model.UrlRetorno">
+                <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">
+                    Quitar de favoritos
+                </button>
+            </form>
+        }
+    </div>
+</article>

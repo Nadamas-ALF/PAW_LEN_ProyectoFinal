@@ -1,0 +1,145 @@
+@*
+Detalle de producto. Layout _LayoutPublico. Publica
+Datos de Model: ProductoDetalleViewModel, ejemplo mientras no exista SP_Producto_ObtenerDetalle
+Disponible o Agotado se calcula del stock, no es una columna de la base
+El boton de agregar nace deshabilitado si esta agotado y el maximo de cantidad es el stock
+El boton de favoritos solo sale con la sesion abierta
+*@
+@model ProductoDetalleViewModel
+@{
+    // El nombre viene del dato, asi que se escapa antes de que el layout lo
+    // pinte con Html.Raw
+    ViewData["Titulo"] = Html.Encode(Model.NombreProducto);
+
+    var urlRetorno = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<nav aria-label="Ruta">
+    <ol class="LenMigas">
+        <li><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+        <li><a asp-controller="Publico" asp-action="Catalogo">Cat&aacute;logo</a></li>
+        <li><a href="/Publico/Catalogo?idCategoria=@Model.IdCategoria">@Model.NombreCategoria</a></li>
+        <li><span aria-current="page">@Model.NombreProducto</span></li>
+    </ol>
+</nav>
+
+@* Resultado de agregar al carrito. Nace oculto y lo llena el JavaScript *@
+<partial name="_Aviso" model="@(new AvisoViewModel {
+    Titulo = "No hay stock suficiente.",
+    Variante = VarianteAviso.Aviso,
+    Oculto = true,
+    Clases = "mb-4" })" />
+
+<div class="row g-4 g-lg-5">
+
+    <div class="col-md-6 col-lg-7">
+        <div class="LenGaleria">
+
+            <button type="button" class="LenGaleria-Principal" aria-label="Ver la imagen completa">
+                @if (Model.Imagenes.Any())
+                {
+                    <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[0]" alt="@Model.NombreProducto"></span>
+                }
+                else
+                {
+                    <span class="LenMarcador">Imagen principal del producto</span>
+                }
+            </button>
+
+            @if (Model.Imagenes.Count > 1)
+            {
+                <ul class="LenGaleria-Miniaturas">
+                    @for (var i = 0; i < Model.Imagenes.Count; i++)
+                    {
+                        <li>
+                            <button type="button" class="LenGaleria-Miniatura"
+                                    aria-label="Ver imagen @(i + 1)"
+                                    aria-current="@(i == 0 ? "true" : null)"
+                                    data-src="@Url.Content($"~/imagenes/{Model.Imagenes[i]}")">
+                                <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[i]" alt=""></span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+
+    <div class="col-md-6 col-lg-5">
+
+        <span class="LenRotulo">@Model.NombreCategoria</span>
+        <h1 class="LenTitular mt-2">@Model.NombreProducto</h1>
+        <p class="LenPrecio LenPrecio--Grande mt-2">@FormatoMoneda.Colones(Model.Precio)</p>
+
+        <p class="d-flex flex-wrap gap-2">
+            @if (Model.Disponible)
+            {
+                <span class="LenBadge LenBadge--Exito">Disponible</span>
+            }
+            else
+            {
+                <span class="LenBadge LenBadge--Negativo">Agotado</span>
+            }
+            @if (Model.EsPiezaUnica)
+            {
+                <span class="LenBadge LenBadge--Marca">Pieza &uacute;nica</span>
+            }
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+        {
+            <p class="LenTexto">@Model.Descripcion</p>
+        }
+
+        @if (Model.Variantes.Any())
+        {
+            <div class="mb-4">
+                <label class="LenEtiqueta" for="Variante">Opciones disponibles</label>
+                <select class="LenCampo" id="Variante">
+                    @foreach (var variante in Model.Variantes)
+                    {
+                        <option value="@variante.IdVariante" data-stock="@variante.Stock">@variante.Etiqueta</option>
+                    }
+                </select>
+                @* Lo reescribe el JavaScript cuando cambia la seleccion *@
+                <span class="LenAyuda">Disponibilidad de esta opci&oacute;n: @Model.Variantes[0].Stock unidad(es).</span>
+            </div>
+        }
+
+        @if (Model.Disponible)
+        {
+            <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+                <div>
+                    <label class="LenEtiqueta" for="Cantidad">Cantidad</label>
+                    <input type="number" class="LenCampo LenCampo--Corto" id="Cantidad"
+                           value="1" min="1" max="@Model.Stock">
+                </div>
+                <button type="button" class="LenBoton LenBoton--Principal" data-idproducto="@Model.IdProducto">
+                    Agregar al carrito
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <button type="button" class="LenBoton LenBoton--Principal" disabled>Agregar al carrito</button>
+            </div>
+        }
+
+        @if (User.Identity!.IsAuthenticated)
+        {
+            <form class="mb-4" method="post" action="@(Model.EsFavorito ? "/Favorito/Eliminar" : "/Favorito/Agregar")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idProducto" value="@Model.IdProducto">
+                <input type="hidden" name="urlRetorno" value="@urlRetorno">
+                <button type="submit" class="LenBoton LenBoton--Secundario">
+                    <i class="bi @(Model.EsFavorito ? "bi-heart-fill" : "bi-heart")" aria-hidden="true"></i>
+                    @(Model.EsFavorito ? "Quitar de favoritos" : "Agregar a favoritos")
+                </button>
+            </form>
+        }
+
+        <a class="LenEnlace LenEnlace--Editorial" asp-controller="Publico" asp-action="Catalogo">&larr; Volver al cat&aacute;logo</a>
+    </div>
+</div>

@@ -1,0 +1,105 @@
+@*
+Catalogo de la tienda. Layout _LayoutPublico. Publica
+Datos de Model: CatalogoViewModel, ejemplo mientras no exista SP_Catalogo_Listar
+Filtros por GET para poder compartir la busqueda: busqueda idCategoria color pagina
+Cada enlace de pagina arrastra los filtros o se pierden al cambiar de pagina
+El corazon de favoritos lo decide la tarjeta y solo sale con la sesion abierta
+*@
+@model CatalogoViewModel
+@{
+    ViewData["Titulo"] = "Cat&aacute;logo";
+
+    // Para que el formulario de favoritos vuelva a esta misma busqueda
+    var urlRetorno = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Cat&aacute;logo de accesorios</h1>
+        <p class="LenEncabezado-Texto">Explore los accesorios disponibles en LEN Accessories.</p>
+    </div>
+</div>
+
+@{
+    var avisoExito = TempData["MensajeExito"] as string;
+    var avisoError = TempData["MensajeError"] as string;
+}
+
+@if (avisoExito is not null || avisoError is not null)
+{
+    <div class="d-grid gap-2 mb-4">
+        @if (avisoExito is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = avisoExito, Variante = VarianteAviso.Exito })" />
+        }
+        @if (avisoError is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = avisoError, Variante = VarianteAviso.Aviso })" />
+        }
+    </div>
+}
+
+<form method="get" asp-controller="Publico" asp-action="Catalogo" class="LenFiltros mb-5">
+    <div class="LenFiltros-Principal">
+        <label class="LenSoloLectores" for="Busqueda">Buscar por nombre</label>
+        <input type="text" class="LenCampo" id="Busqueda" name="busqueda"
+               value="@Model.Busqueda" placeholder="Buscar por nombre...">
+    </div>
+
+    <div>
+        <label class="LenSoloLectores" for="IdCategoria">Categor&iacute;a</label>
+        <select class="LenCampo" id="IdCategoria" name="idCategoria">
+            <option value="">Todas las categor&iacute;as</option>
+            @foreach (var categoria in Model.Categorias)
+            {
+                <option value="@categoria.IdCategoria" selected="@(Model.IdCategoria == categoria.IdCategoria)">@categoria.Nombre</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label class="LenSoloLectores" for="Color">Color</label>
+        <input type="text" class="LenCampo" id="Color" name="color" value="@Model.Color" placeholder="Color">
+    </div>
+
+    <button type="submit" class="LenBoton LenBoton--Principal">Buscar</button>
+</form>
+
+
+@if (Model.Productos.Any())
+{
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+        @foreach (var producto in Model.Productos)
+        {
+            <div class="col">
+                <partial name="_TarjetaProducto"
+                         model="@TarjetaProductoViewModel.Desde(producto, VarianteTarjeta.Catalogo, nivelTitulo: 2, urlRetorno: urlRetorno)" />
+            </div>
+        }
+    </div>
+
+    <partial name="_Paginacion" model="@(new PaginacionViewModel {
+        PaginaActual = Model.PaginaActual,
+        TotalPaginas = Model.TotalPaginas,
+        Ruta = Url.Action("Catalogo", "Publico")!,
+        Filtros = new Dictionary<string, string?>
+        {
+            ["busqueda"] = Model.Busqueda,
+            ["idCategoria"] = Model.IdCategoria?.ToString(),
+            ["color"] = Model.Color,
+        } })" />
+}
+else if (Model.HayFiltros)
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "No se encontraron resultados para su b&uacute;squeda.",
+        Texto = "Intente con otros filtros o vuelva m&aacute;s tarde.",
+        Clases = "mt-5" })" />
+}
+else
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "No hay productos disponibles por el momento.",
+        Texto = "Intente con otros filtros o vuelva m&aacute;s tarde.",
+        Clases = "mt-5" })" />
+}
