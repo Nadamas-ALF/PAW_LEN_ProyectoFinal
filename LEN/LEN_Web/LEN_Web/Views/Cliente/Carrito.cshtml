@@ -1,0 +1,150 @@
+@*
+Carrito del cliente. Layout _LayoutPublico. Pide sesion
+Datos de Model: CarritoViewModel, ejemplo mientras no exista SP_Carrito_Consultar
+Cambiar la cantidad no recarga: el campo llama al API y refresca fila subtotal y globito
+Cantidad en cero elimina la linea, por eso min es 0. El maximo es el stock o 1 si es pieza unica
+Una linea pedida por encima del stock bloquea el boton de pagar
+*@
+@model CarritoViewModel
+@{
+    ViewData["Titulo"] = "Mi carrito";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Mi carrito</h1>
+        <p class="LenEncabezado-Texto">Revise sus productos antes de continuar con el pago.</p>
+    </div>
+</div>
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+@* Lo rellena el JavaScript al cambiar una cantidad o eliminar una linea *@
+<partial name="_Aviso" model="@(new AvisoViewModel {
+    Titulo = "La cantidad fue actualizada.",
+    Variante = VarianteAviso.Exito,
+    Oculto = true,
+    Clases = "mb-4" })" />
+
+@if (Model.EstaVacio)
+{
+    <partial name="_Vacio" model="@(new VacioViewModel {
+        Titulo = "Su carrito esta vac&iacute;o",
+        Texto = "Agregue productos desde el cat&aacute;logo para comenzar su compra.",
+        TextoBoton = "Ver productos",
+        UrlBoton = Url.Action("Catalogo", "Publico"),
+        Clases = "mt-5" })" />
+}
+else
+{
+    <div class="row g-4 g-lg-5">
+
+        <div class="col-lg-8">
+            <div class="LenTabla-Envoltura">
+                <table class="LenTabla LenTabla--Apilada">
+                    <thead>
+                        <tr>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="LenTabla-Numero">Precio</th>
+                            <th scope="col" class="text-center">Cantidad</th>
+                            <th scope="col" class="LenTabla-Numero">Subtotal</th>
+                            <th scope="col"><span class="LenSoloLectores">Acciones</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var linea in Model.Lineas)
+                        {
+                            <tr class="@(linea.Disponible ? null : "LenTabla-FilaAviso")">
+                                <td>
+                                    <div class="LenLineaProducto">
+                                        <div class="LenMarcador LenMarcador--Pequeno">
+                                            @if (linea.RutaImagen is not null)
+                                            {
+                                                <img src="~/imagenes/@linea.RutaImagen" alt="@linea.NombreProducto">
+                                            }
+                                            else
+                                            {
+                                                @:Img
+                                            }
+                                        </div>
+                                        <div>
+                                            <p class="LenLineaProducto-Nombre">@linea.NombreProducto</p>
+                                            @if (!linea.Disponible)
+                                            {
+                                                <span class="LenBadge LenBadge--Negativo">Stock insuficiente (disponible: @linea.StockDisponible)</span>
+                                            }
+                                            else if (linea.EsPiezaUnica)
+                                            {
+                                                <span class="LenBadge LenBadge--Marca">Pieza &uacute;nica</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="LenTabla-Numero" data-etiqueta="Precio">@FormatoMoneda.Colones(linea.PrecioUnitario)</td>
+                                <td class="text-center" data-etiqueta="Cantidad">
+                                    <label class="LenSoloLectores" for="Cantidad@(linea.IdProducto)">Cantidad de @linea.NombreProducto</label>
+                                    <input type="number" class="LenCampo LenCampo--Corto text-center"
+                                           id="Cantidad@(linea.IdProducto)" value="@linea.Cantidad" min="0" max="@linea.MaximoCantidad"
+                                           data-idproducto="@linea.IdProducto" data-cantidadoriginal="@linea.Cantidad">
+                                </td>
+                                <td class="LenTabla-Numero fw-bold" data-etiqueta="Subtotal">@FormatoMoneda.Colones(linea.SubtotalLinea)</td>
+                                <td>
+                                    <div class="LenTabla-Acciones">
+                                        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                                                data-bs-toggle="modal" data-bs-target="#ConfirmarEliminar"
+                                                data-idproducto="@linea.IdProducto" data-nombre="@linea.NombreProducto">Eliminar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="col-lg-4">
+            <div class="LenPanel">
+
+                <div class="LenResumen-Fila">
+                    <span>Subtotal (@Model.CantidadItems art&iacute;culos)</span>
+                    <span class="fw-bold">@FormatoMoneda.Colones(Model.Subtotal)</span>
+                </div>
+
+                <p class="LenAyuda mb-3">El costo de env&iacute;o se muestra en el checkout.</p>
+
+                @if (Model.TieneLineasNoDisponibles)
+                {
+                    <partial name="_Aviso" model="@(new AvisoViewModel {
+                        Titulo = "Ajuste las cantidades de los productos sin stock suficiente para poder continuar.",
+                        Variante = VarianteAviso.Aviso,
+                        Clases = "mb-3" })" />
+
+                    <a class="LenBoton LenBoton--Principal LenBoton--Bloque disabled" asp-controller="Cliente" asp-action="Checkout" aria-disabled="true">
+                        Proceder al pago
+                    </a>
+                }
+                else
+                {
+                    <a class="LenBoton LenBoton--Principal LenBoton--Bloque" asp-controller="Cliente" asp-action="Checkout">Proceder al pago</a>
+                }
+
+                <a class="LenBoton LenBoton--Secundario LenBoton--Bloque mt-2" asp-controller="Publico" asp-action="Catalogo">Seguir comprando</a>
+            </div>
+        </div>
+    </div>
+
+    @* El nombre del producto lo pone el JavaScript desde el data-nombre del boton *@
+    <partial name="_ConfirmarModal" model="@(new ConfirmarModalViewModel {
+        Id = "ConfirmarEliminar",
+        Titulo = "Quitar del carrito",
+        Cuerpo = "Va a quitar <strong>este producto</strong> de su carrito.",
+        TextoConfirmar = "Quitar",
+        IdBotonConfirmar = "BotonQuitarDelCarrito" })" />
+}

@@ -3,6 +3,43 @@ namespace LEN_Web.Models
     // Modelos de las parciales compartidas. Son de presentacion: no salen del API
     // ni de la base, los arma la vista que usa la parcial
 
+    public class ResumenImportesViewModel
+    {
+        public decimal Subtotal { get; set; }
+
+        public decimal CostoEnvio { get; set; }
+
+        public decimal Total => Subtotal + CostoEnvio;
+
+        // En el checkout es Total y en la confirmacion es Total pagado
+        public string EtiquetaTotal { get; set; } = "Total";
+    }
+
+    public class InsigniaEstadoViewModel
+    {
+        public string Etiqueta { get; set; } = string.Empty;
+
+        // Sale de TB_ESTADO_PEDIDO.ClaseCss. La vista no elige el color, asi que
+        // agregar un estado en la base no obliga a tocar ninguna pantalla
+        public string ClaseCss { get; set; } = string.Empty;
+
+        public string? Clases { get; set; }
+    }
+
+    public class ConfirmarModalViewModel
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Titulo { get; set; } = string.Empty;
+
+        public string Cuerpo { get; set; } = string.Empty;
+
+        public string TextoConfirmar { get; set; } = "Confirmar";
+
+        // Para que el JavaScript enganche el boton de confirmar
+        public string IdBotonConfirmar { get; set; } = string.Empty;
+    }
+
     public enum VarianteAviso
     {
         Exito,

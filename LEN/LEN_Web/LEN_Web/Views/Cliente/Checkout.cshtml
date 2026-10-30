@@ -1,0 +1,194 @@
+@*
+Finalizar compra. Layout _LayoutPublico. Pide sesion
+Datos de Model: CheckoutViewModel, ejemplo mientras no exista SP_Checkout_ConsultarResumen
+Formulario: POST a /Checkout/Confirmar con IdDireccionSeleccionada IdMetodoPagoSeleccionado y DatoPagoSimulado
+Los campos de tarjeta transferencia y SINPE no llevan name a proposito: no se envian
+Sin direcciones registradas el boton de confirmar queda deshabilitado
+*@
+@model CheckoutViewModel
+@{
+    ViewData["Titulo"] = "Finalizar compra";
+}
+
+<div class="LenEncabezado">
+    <div>
+        <h1 class="LenEncabezado-Titulo">Finalizar compra</h1>
+        <p class="LenEncabezado-Texto">Confirme su direcci&oacute;n, m&eacute;todo de pago y el resumen del pedido.</p>
+    </div>
+</div>
+
+@if (TempData["MensajePendiente"] is string pendiente)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = pendiente,
+        Variante = VarianteAviso.Aviso,
+        Cerrable = true,
+        Clases = "mb-4" })" />
+}
+
+@if (TempData["MensajeError"] is string mensajeError)
+{
+    <partial name="_Aviso" model="@(new AvisoViewModel {
+        Titulo = mensajeError,
+        Variante = VarianteAviso.Aviso,
+        Clases = "mb-4" })" />
+}
+
+<form method="post" action="/Checkout/Confirmar">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4 g-lg-5">
+
+        <div class="col-lg-7">
+
+            <section class="LenBloque">
+                <h2 class="LenBloque-Titulo">Direcci&oacute;n de env&iacute;o</h2>
+
+                @if (Model.TieneDirecciones)
+                {
+                    @foreach (var direccion in Model.Direcciones)
+                    {
+                        <div class="LenSeleccion">
+                            <input type="radio" name="IdDireccionSeleccionada" id="Direccion@(direccion.IdDireccion)"
+                                   value="@direccion.IdDireccion" checked="@direccion.EsPrincipal">
+                            <label for="Direccion@(direccion.IdDireccion)">
+                                <span class="fw-bold">@direccion.NombreDestinatario</span>
+                                @if (direccion.EsPrincipal)
+                                {
+                                    <span class="LenBadge LenBadge--Exito ms-1">Principal</span>
+                                }
+                                <br>
+                                @direccion.DireccionExacta
+                                <span class="LenAyuda">
+                                    @direccion.Ubicacion &middot; Tel: @direccion.TelefonoContacto
+                                </span>
+                            </label>
+                        </div>
+                    }
+
+                    <a class="LenEnlace LenPequeno" href="/Cliente/EditarCuenta">Agregar otra direcci&oacute;n</a>
+                }
+                else
+                {
+                    <div class="LenAviso LenAviso--Aviso mt-3" role="alert">
+                        <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-exclamation-circle"></i></span>
+                        <div class="LenAviso-Cuerpo"><p class="LenPequeno mb-0">
+                            No tiene direcciones registradas. Agregue una direcci&oacute;n desde
+                            <a class="LenEnlace" href="/Cliente/EditarCuenta">su perfil</a>
+                            para poder completar la compra.
+                        </p></div>
+                    </div>
+                }
+            </section>
+
+
+            <section class="LenBloque">
+                <h2 class="LenBloque-Titulo">M&eacute;todo de pago</h2>
+                <p class="LenAyuda mb-3">
+                    El pago es simulado para efectos del proyecto: no se realiza
+                    ning&uacute;n cobro real.
+                </p>
+
+                <label class="LenSoloLectores" for="MetodoPago">M&eacute;todo de pago</label>
+                @* data-nombre le dice al JavaScript cual de los cuatro bloques mostrar *@
+                <select class="LenCampo" id="MetodoPago" name="IdMetodoPagoSeleccionado" required>
+                    <option value="">Seleccione un m&eacute;todo de pago</option>
+                    @foreach (var metodo in Model.MetodosPago)
+                    {
+                        <option value="@metodo.IdMetodoPago" data-nombre="@metodo.Nombre"
+                                selected="@(metodo.IdMetodoPago == 1)">@metodo.Nombre</option>
+                    }
+                </select>
+
+                @* Lo unico que se envia de todo el bloque de pago. Lo arma el JavaScript *@
+                <input type="hidden" name="DatoPagoSimulado" value="">
+
+                @* Los cuatro bloques nacen ocultos menos el del metodo elegido. Ninguno
+                   de sus campos lleva name: no se envian, solo alimentan al JavaScript *@
+                <div class="LenPanel mt-3" data-metodo="Tarjeta">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="TarjetaNumero">N&uacute;mero de tarjeta</label>
+                            <input type="text" class="LenCampo" id="TarjetaNumero"
+                                   placeholder="0000 0000 0000 0000" maxlength="19"
+                                   inputmode="numeric" autocomplete="off">
+                        </div>
+                        <div class="col-6">
+                            <label class="LenEtiqueta" for="TarjetaVencimiento">Vencimiento (MM/AA)</label>
+                            <input type="text" class="LenCampo" id="TarjetaVencimiento"
+                                   placeholder="MM/AA" maxlength="5" autocomplete="off">
+                        </div>
+                        <div class="col-6">
+                            <label class="LenEtiqueta" for="TarjetaCvv">CVV</label>
+                            <input type="text" class="LenCampo" id="TarjetaCvv"
+                                   placeholder="123" maxlength="4" inputmode="numeric" autocomplete="off">
+                        </div>
+                    </div>
+                    <p class="LenAyuda mb-0 mt-3">
+                        Datos simulados: no se procesa ning&uacute;n cobro real ni se
+                        almacena la tarjeta completa.
+                    </p>
+                </div>
+
+                <div class="LenPanel mt-3" data-metodo="Transferencia bancaria" hidden>
+                    <p class="mb-0">Realice la transferencia simulada a la siguiente cuenta:</p>
+                    <p class="fw-bold">Banco LEN &middot; Cuenta IBAN CR05-0000-0000-0000-0000-0000</p>
+                    <label class="LenEtiqueta" for="TransferenciaReferencia">
+                        N&uacute;mero de comprobante de la transferencia
+                    </label>
+                    <input type="text" class="LenCampo" id="TransferenciaReferencia"
+                           placeholder="Ej. 000123456" maxlength="50" autocomplete="off">
+                </div>
+
+                <div class="LenPanel mt-3" data-metodo="SINPE Movil" hidden>
+                    <p class="mb-0">Realice el SINPE M&oacute;vil simulado al siguiente n&uacute;mero:</p>
+                    <p class="fw-bold">8888-8888 &middot; Tienda LEN</p>
+                    <label class="LenEtiqueta" for="SinpeTelefono">N&uacute;mero desde el que envia</label>
+                    <input type="tel" class="LenCampo" id="SinpeTelefono"
+                           placeholder="Ej. 8888-8888" maxlength="20" autocomplete="off">
+                </div>
+
+                <div class="LenAviso LenAviso--Info mt-3" data-metodo="Efectivo contra entrega" hidden>
+                    <span class="LenAviso-Icono" aria-hidden="true"><i class="bi bi-info-circle"></i></span>
+                    <div class="LenAviso-Cuerpo"><p class="LenPequeno mb-0">Pague en efectivo al recibir su pedido.</p></div>
+                </div>
+            </section>
+        </div>
+
+
+        <div class="col-lg-5">
+            <div class="LenPanel">
+                <h2 class="LenBloque-Titulo">Resumen del pedido</h2>
+
+                <table class="LenTabla LenTabla--Compacta">
+                    <tbody>
+                        @foreach (var linea in Model.Lineas)
+                        {
+                            <tr>
+                                <td>@linea.NombreProducto <span class="LenAyuda d-inline">&times; @linea.Cantidad</span></td>
+                                <td class="LenTabla-Numero">@FormatoMoneda.Colones(linea.SubtotalLinea)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="mt-3">
+                    <partial name="_ResumenImportes" model="@(new ResumenImportesViewModel {
+                        Subtotal = Model.Subtotal,
+                        CostoEnvio = Model.CostoEnvio })" />
+                </div>
+
+                @if (Model.TieneDirecciones)
+                {
+                    <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque mt-4">Confirmar compra</button>
+                }
+                else
+                {
+                    <button type="button" class="LenBoton LenBoton--Principal LenBoton--Bloque mt-4" disabled>Confirmar compra</button>
+                }
+
+                <a class="LenBoton LenBoton--Secundario LenBoton--Bloque mt-2" asp-controller="Cliente" asp-action="Carrito">Volver al carrito</a>
+            </div>
+        </div>
+    </div>
+</form>

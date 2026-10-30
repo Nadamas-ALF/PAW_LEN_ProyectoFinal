@@ -1,0 +1,18 @@
+@*
+Resumen de importes. Sale en Checkout y en ConfirmacionPedido
+El total lo calcula el modelo: la base exige que cuadre con CK_Pedido_Total
+*@
+@model ResumenImportesViewModel
+
+<div class="LenResumen-Fila">
+    <span>Subtotal</span>
+    <span>@FormatoMoneda.Colones(Model.Subtotal)</span>
+</div>
+<div class="LenResumen-Fila">
+    <span>Costo de env&iacute;o</span>
+    <span>@FormatoMoneda.Colones(Model.CostoEnvio)</span>
+</div>
+<div class="LenResumen-Fila LenResumen-Total">
+    <span>@Html.Raw(Model.EtiquetaTotal)</span>
+    <span>@FormatoMoneda.Colones(Model.Total)</span>
+</div>

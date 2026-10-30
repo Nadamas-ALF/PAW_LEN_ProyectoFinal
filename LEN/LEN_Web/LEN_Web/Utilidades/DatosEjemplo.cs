@@ -141,6 +141,119 @@ namespace LEN_Web.Utilidades
         }
 
         // ----------------------------------------------------------------
+        // Compra: carrito checkout y confirmacion
+        // ----------------------------------------------------------------
+
+        // El carrito trae a proposito las cuatro situaciones que la pantalla tiene
+        // que saber pintar: linea normal, pieza unica con maximo 1, y linea pedida
+        // por encima del stock que bloquea el pago
+        public static CarritoViewModel Carrito(IWebHostEnvironment entorno) => new()
+        {
+            Lineas =
+            [
+                LineaCarritoDe(entorno, 1, 2),
+                LineaCarritoDe(entorno, 3, 1),
+                LineaCarritoDe(entorno, 6, 1),
+                LineaCarritoDe(entorno, 10, 3),
+            ],
+        };
+
+        // El checkout muestra solo lo que de verdad se puede comprar, y suma
+        // 22 500 mas 2 500 de envio igual a 25 000, que es el total del pedido
+        // FAC-000012 que repiten la confirmacion la factura y los pagos
+        public static CheckoutViewModel Checkout(IWebHostEnvironment entorno) => new()
+        {
+            Lineas =
+            [
+                LineaCarritoDe(entorno, 1, 2),
+                LineaCarritoDe(entorno, 3, 1),
+            ],
+            CostoEnvio = 2500m,
+            Direcciones = Direcciones(),
+            MetodosPago = MetodosPago(),
+        };
+
+        public static ConfirmacionPedidoViewModel Confirmacion(IWebHostEnvironment entorno) => new()
+        {
+            IdPedido = 12,
+            NumeroFactura = "FAC-000012",
+            FechaPedido = new DateTime(2026, 9, 20, 15, 42, 0),
+            Subtotal = 22500m,
+            CostoEnvio = 2500m,
+            Total = 25000m,
+            EstadoVisible = "Comprada",
+            ClaseCssEstado = "estado-pedido-pagado",
+            NombreMetodoPago = "Tarjeta",
+            ComprobantePago = "4242",
+            Direccion = Direcciones()[0],
+            Lineas =
+            [
+                LineaPedidoDe(entorno, 1, 2),
+                LineaPedidoDe(entorno, 3, 1),
+            ],
+        };
+
+        public static List<DireccionEnvio> Direcciones() =>
+        [
+            new()
+            {
+                IdDireccion = 1,
+                NombreDestinatario = "Ana Mora Jimenez",
+                DireccionExacta = "200 m sur de la escuela, casa verde",
+                Distrito = "Carmen", Canton = "San Jose", Provincia = "San Jose",
+                TelefonoContacto = "8888-0001",
+                EsPrincipal = true,
+            },
+            new()
+            {
+                IdDireccion = 2,
+                NombreDestinatario = "Luis Castro Pineda",
+                DireccionExacta = "Oficentro La Sabana, edificio 4, piso 2",
+                Distrito = "Mata Redonda", Canton = "San Jose", Provincia = "San Jose",
+                TelefonoContacto = "8888-0002",
+            },
+        ];
+
+        // Los cuatro que carga 02_catalogos.sql
+        public static List<MetodoPago> MetodosPago() =>
+        [
+            new() { IdMetodoPago = 1, Nombre = "Tarjeta" },
+            new() { IdMetodoPago = 2, Nombre = "Transferencia bancaria" },
+            new() { IdMetodoPago = 3, Nombre = "SINPE Movil" },
+            new() { IdMetodoPago = 4, Nombre = "Efectivo contra entrega" },
+        ];
+
+        private static LineaCarrito LineaCarritoDe(IWebHostEnvironment entorno, int idProducto, int cantidad)
+        {
+            var producto = Catalogo.First(fila => fila.Id == idProducto);
+
+            return new LineaCarrito
+            {
+                IdProducto = producto.Id,
+                NombreProducto = producto.Nombre,
+                PrecioUnitario = producto.Precio,
+                Cantidad = cantidad,
+                StockDisponible = producto.Stock,
+                EsPiezaUnica = producto.EsPiezaUnica,
+                RutaImagen = producto.Archivos.Length == 0 ? null : Imagen(entorno, producto.Archivos[0]),
+            };
+        }
+
+        private static LineaPedido LineaPedidoDe(IWebHostEnvironment entorno, int idProducto, int cantidad)
+        {
+            var producto = Catalogo.First(fila => fila.Id == idProducto);
+
+            return new LineaPedido
+            {
+                IdProducto = producto.Id,
+                NombreProducto = producto.Nombre,
+                PrecioUnitario = producto.Precio,
+                Cantidad = cantidad,
+                RutaImagen = producto.Archivos.Length == 0 ? null : Imagen(entorno, producto.Archivos[0]),
+            };
+        }
+
+        // ----------------------------------------------------------------
         // Apoyo
         // ----------------------------------------------------------------
 

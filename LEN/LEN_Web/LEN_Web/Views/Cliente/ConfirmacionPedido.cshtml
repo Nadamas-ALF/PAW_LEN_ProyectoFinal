@@ -1,0 +1,119 @@
+@*
+Confirmacion de la compra. Layout _LayoutPublico. Pide sesion y solo sus propios pedidos
+Datos de Model: ConfirmacionPedidoViewModel, mientras no exista SP_Pedido_ConsultarConfirmacion
+El precio de cada linea es el congelado en TB_DETALLE_PEDIDO, no el actual del producto
+EstadoVisible trae la palabra del cliente: Pagado se muestra como Comprada
+*@
+@model ConfirmacionPedidoViewModel
+@{
+    ViewData["Titulo"] = "Compra confirmada";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <div class="text-center mb-5">
+            <i class="bi bi-check-lg LenVacio-Icono LenVacio-Icono--Exito" aria-hidden="true"></i>
+
+            <h1 class="LenTitular">Gracias por su compra</h1>
+            <p class="LenTexto LenTexto--Guia mx-auto mt-2">Su pedido fue registrado y pagado correctamente.</p>
+
+            <p class="fs-5 mb-1">
+                N&uacute;mero de factura:
+                <span class="fw-bold">@Model.NumeroFactura</span>
+            </p>
+            <p class="mb-0">
+                @Model.FechaPedido.ToString("dd/MM/yyyy hh:mm tt", new System.Globalization.CultureInfo("es-CR"))
+                &middot; Estado:
+                <partial name="_InsigniaEstado" model="@(new InsigniaEstadoViewModel {
+                    Etiqueta = Model.EstadoVisible,
+                    ClaseCss = Model.ClaseCssEstado })" />
+            </p>
+        </div>
+
+
+        <section class="LenBloque">
+            <h2 class="LenBloque-Titulo">Productos</h2>
+
+            <div class="LenTabla-Envoltura">
+                <table class="LenTabla LenTabla--Apilada">
+                    <thead>
+                        <tr>
+                            <th scope="col">Producto</th>
+                            <th scope="col" class="text-center">Cantidad</th>
+                            <th scope="col" class="LenTabla-Numero">Precio</th>
+                            <th scope="col" class="LenTabla-Numero">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var linea in Model.Lineas)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="LenLineaProducto">
+                                        <div class="LenMarcador LenMarcador--Pequeno">
+                                            @if (linea.RutaImagen is not null)
+                                            {
+                                                <img src="~/imagenes/@linea.RutaImagen" alt="@linea.NombreProducto">
+                                            }
+                                            else
+                                            {
+                                                @:Img
+                                            }
+                                        </div>
+                                        <span>@linea.NombreProducto</span>
+                                    </div>
+                                </td>
+                                <td class="text-center" data-etiqueta="Cantidad">@linea.Cantidad</td>
+                                <td class="LenTabla-Numero" data-etiqueta="Precio">@FormatoMoneda.Colones(linea.PrecioUnitario)</td>
+                                <td class="LenTabla-Numero" data-etiqueta="Subtotal">@FormatoMoneda.Colones(linea.SubtotalLinea)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row justify-content-end mt-3">
+                <div class="col-md-6 col-lg-5">
+                    <partial name="_ResumenImportes" model="@(new ResumenImportesViewModel {
+                        Subtotal = Model.Subtotal,
+                        CostoEnvio = Model.CostoEnvio,
+                        EtiquetaTotal = "Total pagado" })" />
+                </div>
+            </div>
+        </section>
+
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <section class="LenBloque mb-0">
+                    <h2 class="LenBloque-Titulo">Direcci&oacute;n de env&iacute;o</h2>
+                    <p class="mb-0">
+                        <span class="fw-bold">@Model.Direccion.NombreDestinatario</span><br>
+                        @Model.Direccion.DireccionExacta<br>
+                        <span class="LenAyuda">@Model.Direccion.Ubicacion</span>
+                    </p>
+                </section>
+            </div>
+
+            <div class="col-md-6">
+                <section class="LenBloque mb-0">
+                    <h2 class="LenBloque-Titulo">Pago</h2>
+                    <p class="mb-0">
+                        M&eacute;todo: <span class="fw-bold">@Model.NombreMetodoPago</span><br>
+                        @if (!string.IsNullOrWhiteSpace(Model.ComprobantePago))
+                        {
+                            <span>@Model.ComprobantePago</span><br>
+                        }
+                        <span class="LenAyuda">Pago simulado registrado correctamente.</span>
+                    </p>
+                </section>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a class="LenBoton LenBoton--Principal" href="/Cliente/MisPedidos">Ver mis pedidos</a>
+            <a class="LenBoton LenBoton--Secundario" asp-controller="Publico" asp-action="Catalogo">Seguir comprando</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,8 @@
+@*
+Insignia de estado de pedido. Sale en seis pantallas
+La etiqueta es un parametro porque el cliente ve otras palabras que el panel:
+Pagado sale como Comprada, En preparacion como En camino y Entregado como Recibido
+*@
+@model InsigniaEstadoViewModel
+
+<span class="LenBadge @Model.ClaseCss @Model.Clases">@Html.Raw(Model.Etiqueta)</span>
