@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -7,6 +8,7 @@ namespace LEN_Web.Controllers
     //
     // Los dos son stubs. Vuelven a donde se apreto el boton, que llega en
     // urlRetorno para no perder los filtros de busqueda del catalogo
+    [Authorize(Roles = "Cliente")]
     public class FavoritoController : Controller
     {
         private const string Pendiente =

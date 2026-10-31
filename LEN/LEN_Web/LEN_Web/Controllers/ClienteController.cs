@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using LEN_Web.Utilidades;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
-    // Pantallas del cliente sobre su propia compra y su cuenta. Piden sesion, pero
-    // el atributo Authorize entra cuando se configure la autenticacion: hoy no hay
-    // esquema registrado y poner Authorize reventaria la vista
+    // Pantallas del cliente sobre su propia compra y su cuenta. Solo del rol Cliente
+    [Authorize(Roles = "Cliente")]
     public class ClienteController : Controller
     {
         private readonly IWebHostEnvironment _entorno;

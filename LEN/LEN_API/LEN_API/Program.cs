@@ -2,8 +2,13 @@ using LEN_API.Datos;
 using LEN_API.Dtos;
 using LEN_API.Infraestructura;
 using LEN_API.Repositorios;
+using System.Text;
 using LEN_API.Servicios;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +19,39 @@ var cadenaConexion = builder.Configuration.GetConnectionString("BD_LEN")
 // alcance de peticion sale de la misma fabrica para compartir opciones
 builder.Services.AddDbContextFactory<ContextoLen>(opciones => opciones.UseSqlServer(cadenaConexion));
 builder.Services.AddScoped(proveedor => proveedor.GetRequiredService<IDbContextFactory<ContextoLen>>().CreateDbContext());
+
+var opcionesJwt = builder.Configuration.GetSection("Jwt").Get<OpcionesJwt>() ?? new OpcionesJwt();
+opcionesJwt.Validar();
+builder.Services.Configure<OpcionesJwt>(builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opciones =>
+    {
+        // sin esto el handler renombra los claims y los nombres del contrato dejan de existir
+        opciones.MapInboundClaims = false;
+        opciones.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = opcionesJwt.Emisor,
+            ValidateAudience = true,
+            ValidAudience = opcionesJwt.Audiencia,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(opcionesJwt.Llave)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = "Correo",
+            RoleClaimType = "NombreRol"
+        };
+    });
+
+// acceso denegado por defecto: lo publico se marca a mano con [AllowAnonymous]
+builder.Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+builder.Services.AddSingleton<IPasswordHasher<string>, PasswordHasher<string>>();
+builder.Services.AddSingleton<IEmisorToken, EmisorToken>();
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
+builder.Services.AddScoped<IAccesoServicio, AccesoServicio>();
 
 builder.Services.AddSingleton<IRegistroErrores, RegistroErrores>();
 builder.Services.AddScoped<IDiagnosticoRepositorio, DiagnosticoRepositorio>();
@@ -46,6 +84,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

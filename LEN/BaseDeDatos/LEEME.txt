@@ -1,0 +1,284 @@
+﻿============================================================
+LEN Accessories - Base de datos
+Como dejarla corriendo en una maquina nueva
+============================================================
+
+Todo esto se probo contra SQL Server 2025 (17.0.1125.2) Standard
+Developer. Sirve igual de 2019 en adelante; abajo se dice que hay que
+cambiar si la version es anterior.
+
+
+1. QUE HACE FALTA ANTES
+------------------------------------------------------------
+
+- SQL Server 2019 o superior, cualquier edicion, incluida Express.
+- SSMS, o la extension mssql de VS Code, o sqlcmd. Cualquiera sirve.
+- El usuario de Windows con el que se corre tiene que poder crear bases
+  de datos. En una instalacion local recien hecha, el que la instalo ya
+  puede.
+
+Como averiguar el nombre de la instancia, que cambia en cada maquina:
+
+    sqlcmd -L
+
+Si la instalacion es la de por defecto, el servidor es "localhost". Si
+es una instancia nombrada, es "localhost\NOMBRE". En la maquina donde se
+armo esto la instancia se llama MSSQLSERVER2, o sea "localhost\MSSQLSERVER2",
+y no existe instancia por defecto. Eso es propio de esa maquina: no esta
+escrito en ningun script.
+
+
+2. SI YA EXISTE UNA BD_LEN DEL PRIMER AVANCE
+------------------------------------------------------------
+
+El esquema cambio de nombre completo: antes era dbo.TB_usuario con
+columna id_usuario, ahora es dbo.TB_USUARIO con IdUsuario. Para SQL
+Server esos dos nombres son el mismo objeto, porque no distingue
+mayusculas.
+
+01_esquema.sql detecta la base vieja y se detiene con este mensaje, sin
+tocar nada:
+
+    La base BD_LEN ya existe con el esquema viejo (snake_case).
+    Renombrela o eliminela a mano antes de correr este script.
+
+Los scripts no borran nada por su cuenta, a proposito. Hay que decidirlo
+a mano. Dos salidas:
+
+  a) Guardarla por si acaso, renombrandola:
+
+         ALTER DATABASE BD_LEN MODIFY NAME = BD_LEN_AVANCE1;
+
+  b) Eliminarla, si ya no se necesita. OJO: esto no se puede deshacer.
+
+         ALTER DATABASE BD_LEN SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+         DROP DATABASE BD_LEN;
+
+
+3. ORDEN DE EJECUCION
+------------------------------------------------------------
+
+Se corren en este orden. Los cuatro se pueden correr las veces que haga
+falta: correrlos dos veces seguidas no falla ni duplica nada.
+
+    01_esquema.sql             obligatorio. Crea BD_LEN y sus 23 tablas
+    02_catalogos.sql           obligatorio. Roles, estados, 7 provincias,
+                               84 cantones, 494 distritos, 4 metodos de pago
+    03_procedimientos.sql      obligatorio. Los 66 procedimientos
+    04_pruebas_integridad.sql  opcional. Comprueba que la base rechaza lo
+                               que debe rechazar. No deja nada: todo lo que
+                               inserta se revierte al terminar
+    05_datos_prueba.sql        opcional, SOLO DESARROLLO. Deja dos usuarios para
+                               poder entrar: un administrador y un cliente.
+                               Las contrasenas estan en el encabezado del
+                               archivo. No correrlo en produccion
+
+Sin el 05 la base queda vacia de usuarios, productos y pedidos. Ver el
+punto 6.
+
+
+4. CORRERLOS
+------------------------------------------------------------
+
+Con SSMS
+    Abrir cada archivo y ejecutarlo completo con F5, en el orden de
+    arriba. SSMS ya trae bien las opciones de sesion que hacen falta.
+    Al terminar cada uno sale un mensaje en la pestania Messages.
+
+Con sqlcmd, uno por uno
+    sqlcmd -S localhost\LAINSTANCIA -E -C -f 65001 -I -b -i 01_esquema.sql
+    sqlcmd -S localhost\LAINSTANCIA -E -C -f 65001 -I -b -i 02_catalogos.sql
+    sqlcmd -S localhost\LAINSTANCIA -E -C -f 65001 -I -b -i 03_procedimientos.sql
+    sqlcmd -S localhost\LAINSTANCIA -E -C -f 65001 -I -b -i 04_pruebas_integridad.sql
+    sqlcmd -S localhost\LAINSTANCIA -E -C -f 65001 -I -b -i 05_datos_prueba.sql
+
+    Que significa cada opcion, porque tres de ellas no son opcionales:
+
+      -E   autenticacion de Windows
+      -C   confia en el certificado del servidor. Sin esto, una
+           instalacion local recien hecha rechaza la conexion por el
+           certificado autofirmado
+      -f 65001  lee los archivos como UTF-8. Sin esto los acentos de los
+           catalogos llegan corrompidos: quedan "San JosÃ©" y "LimÃ³n"
+      -I   activa QUOTED_IDENTIFIER. Sin esto fallan los indices
+           filtrados del esquema con el error 1934. sqlcmd arranca con
+           esa opcion apagada, al contrario de SSMS y de .NET
+      -b   corta la ejecucion en el primer error, en vez de seguir de
+           largo
+
+Como saber que salio bien
+    Cada script imprime su propia linea al terminar. La del 02 trae los
+    conteos y tiene que decir exactamente esto:
+
+      02_catalogos.sql: listo. Roles=2 EstadosPedido=4 EstadosPago=3
+      EstadosFactura=2 MetodosPago=4 Provincias=7 Cantones=84 Distritos=494
+
+    Y la del 04, si se corrio:
+
+      04_pruebas_integridad.sql: las 24 pruebas dieron el resultado esperado.
+
+    Y la del 05, si se corrio:
+
+      05_datos_prueba.sql: listo. Administradores de prueba=1 Clientes de prueba=1
+
+
+5. SI LA VERSION DE SQL SERVER ES ANTERIOR A 2019
+------------------------------------------------------------
+
+01_esquema.sql crea la base con la intercalacion
+Latin1_General_100_CI_AI_SC_UTF8, que existe desde SQL Server 2019. Para
+saber si la instancia la soporta:
+
+    SELECT COUNT(*) FROM sys.fn_helpcollations()
+    WHERE name = 'Latin1_General_100_CI_AI_SC_UTF8';
+
+Si devuelve 0, hay que cambiar esa linea de 01_esquema.sql por:
+
+    COLLATE Modern_Spanish_CI_AI
+
+Todo lo demas funciona igual: las columnas de texto son NVARCHAR, asi
+que los acentos se guardan bien con cualquiera de las dos.
+
+La intercalacion se fija al crear la base y cambiarla despues obliga a
+recrearla. Es insensible a mayusculas y a acentos: buscar "jose"
+encuentra "Jose" y "Jose" con tilde, y dos categorias que solo se
+diferencien en una tilde se consideran la misma.
+
+
+6. EL PRIMER ADMINISTRADOR
+------------------------------------------------------------
+
+La base nace sin usuarios, asi que recien instalada no hay con que
+entrar al panel. En desarrollo basta con correr 05_datos_prueba.sql, que
+trae un administrador. Para una base de verdad, el primer administrador
+se crea una sola vez, a mano.
+
+El hash de la contrasena NO se calcula en la base. Lo calcula siempre la
+aplicacion, y a la base solo llega el hash ya hecho. Asi que hay dos
+caminos:
+
+  a) Registrarse desde la pantalla publica de registro de la tienda, que
+     crea la cuenta con rol Cliente, y despues subirla a Administrador:
+
+         UPDATE dbo.TB_USUARIO
+         SET IdRol = 1
+         WHERE Correo = N'elcorreo@ejemplo.com';
+
+     Es el camino recomendado: el hash lo genera la aplicacion con el
+     mismo algoritmo que usa para verificarlo al iniciar sesion.
+
+  b) Insertarlo directo, pegando un hash generado por la aplicacion:
+
+         INSERT INTO dbo.TB_USUARIO (IdRol, Nombre, Apellido, Correo, ContrasenaHash)
+         VALUES (1, N'Nombre', N'Apellido', N'elcorreo@ejemplo.com', N'PEGAR-EL-HASH-AQUI');
+
+     Un hash inventado a mano no sirve: el inicio de sesion lo va a
+     rechazar porque no corresponde a ninguna contrasena.
+
+Ids de rol: 1 es Administrador, 2 es Cliente.
+
+
+7. CADENA DE CONEXION
+------------------------------------------------------------
+
+La cadena va en la configuracion del API, nunca en el codigo y nunca en
+un archivo que se suba al repositorio. En el repositorio queda solo una
+plantilla con valores falsos.
+
+Plantilla, con autenticacion de Windows, que es la que se usa. Asi no
+hay ninguna contrasena en ningun archivo:
+
+    Server=localhost\LAINSTANCIA;Database=BD_LEN;Integrated Security=true;TrustServerCertificate=true;Encrypt=true;MultipleActiveResultSets=true
+
+El valor de verdad se guarda con User Secrets, que vive fuera de la
+carpeta del proyecto:
+
+    dotnet user-secrets init
+    dotnet user-secrets set "ConnectionStrings:BD_LEN" "Server=localhost\MSSQLSERVER2;Database=BD_LEN;Integrated Security=true;TrustServerCertificate=true"
+
+TrustServerCertificate=true es para desarrollo local, donde el
+certificado es autofirmado. En un despliegue de verdad se quita y se usa
+un certificado valido.
+
+Solo el API tiene cadena de conexion. La aplicacion web MVC no tiene
+ninguna y no habla con SQL Server: todo lo pide por HTTP al API.
+
+
+8. GENERAR LAS ENTIDADES DESDE LA BASE
+------------------------------------------------------------
+
+El enfoque es database first: la base es la fuente de verdad y las
+entidades se generan por ingenieria inversa desde la base ya creada.
+Prohibido usar migraciones de Entity Framework.
+
+Desde la carpeta del proyecto del API, una vez corridos el 01 y el 02:
+
+    dotnet ef dbcontext scaffold "Server=localhost\LAINSTANCIA;Database=BD_LEN;Integrated Security=true;TrustServerCertificate=true" Microsoft.EntityFrameworkCore.SqlServer --output-dir Datos/Entidades --context-dir Datos --context ContextoLen --no-onconfiguring --use-database-names --force
+
+Que hace cada cosa:
+    --no-onconfiguring   no escribe la cadena de conexion dentro del
+                         contexto, que la dejaria en el repositorio
+    --use-database-names respeta los nombres tal como estan en la base
+    --force              sobreescribe lo generado antes
+
+    El proyecto del API trae Datos/DisenoServicios.cs, que apaga el
+    singularizador de EF. Sin el, TB_CATEGORIA sale como TB_CATEGORIum.
+    Si el scaffold no compila porque el contexto viejo apunta a
+    entidades que ya no existen, borrar Datos/ContextoLen.cs y
+    Datos/Entidades/ y volver a correrlo.
+
+Si se cambia el esquema: se edita 01_esquema.sql, se recrea la base y se
+vuelve a generar. En ese orden, y nunca al reves.
+
+
+9. SI ALGO FALLA
+------------------------------------------------------------
+
+Error 1934, 'QUOTED_IDENTIFIER'
+    Falta la opcion -I en sqlcmd. El esquema usa indices filtrados y no
+    funcionan con esa opcion apagada.
+
+Acentos corrompidos en provincias y cantones: "San JosÃ©"
+    Falta -f 65001 en sqlcmd, o el archivo se guardo sin BOM y se abrio
+    como ANSI. Los cuatro scripts estan en UTF-8 con BOM: si se editan,
+    hay que guardarlos igual.
+
+Error 50001, la base ya existe con el esquema viejo
+    Es la guarda del punto 2. Hay que renombrar o eliminar la BD_LEN
+    vieja a mano.
+
+Error 18456, inicio de sesion fallido
+    El usuario de Windows no tiene permiso en la instancia. Hay que
+    agregarlo como login desde una sesion que si tenga permiso.
+
+Error de certificado al conectar
+    Falta -C en sqlcmd, o TrustServerCertificate=true en la cadena de
+    conexion.
+
+Error 547 o 2601 corriendo el 04
+    Eso es lo que el 04 busca: son las pruebas que tienen que fallar. El
+    resumen del final es el que dice si algo anda mal de verdad.
+
+
+10. DE DONDE SALIO ESTO
+------------------------------------------------------------
+
+Los cuatro scripts vienen del primer avance del proyecto, que tenia todo
+repartido en cinco archivos sueltos que habia que correr en un orden que
+solo estaba escrito en los comentarios, con tablas creadas sin guarda
+(correr dos veces fallaba), columnas agregadas despues con ALTER TABLE, y
+datos de prueba mezclados con los catalogos y con los procedimientos.
+
+Los cambios de fondo respecto de esa version estan explicados en la
+seccion 5 del CLAUDE.md de la carpeta de arriba. En resumen:
+
+  - Todo renombrado a la convencion del equipo: TB_USUARIO, IdUsuario
+  - La tabla generica TB_estado se partio en un catalogo por dominio, y
+    donde solo era Activo/Inactivo quedo una columna Activo
+  - El producto ya no guarda "Disponible" o "Agotado": se calcula del
+    stock, que es un dato menos que mantener sincronizado a mano
+  - Nueva TB_BITACORA de auditoria, que escriben los procedimientos
+    dentro de la misma transaccion del cambio
+  - Los procedimientos lanzan THROW 50000 en vez de devolver una columna
+    Exitoso, para que el API pueda distinguir un 400 de un 500
+============================================================

@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using LEN_Web.Utilidades;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
     // Pantallas publicas de la tienda. No piden sesion
+    [AllowAnonymous]
     public class PublicoController : Controller
     {
         private readonly IWebHostEnvironment _entorno;

@@ -13,3 +13,63 @@ Accept: application/json
 ### Fallo interno: 500 con { mensaje generico, codigoReferencia } y una fila nueva en TB_ERROR
 GET {{LEN_API_HostAddress}}/api/diagnostico/error-interno
 Accept: application/json
+
+### F5 - Acceso
+### Las credenciales no van escritas aca: cambiar las dos variables por las de
+### 05_datos_prueba.sql, o por una cuenta que se haya registrado antes
+@Correo = correo@ejemplo.com
+@Contrasena = la-del-05_datos_prueba
+@Token = pegar-aqui-el-token-que-devuelve-iniciar-sesion
+
+### Registro (HU-ACC-001). Camino que funciona: 201 con { idUsuario }
+POST {{LEN_API_HostAddress}}/api/acceso/registro
+Content-Type: application/json
+
+{
+  "nombre": "Prueba",
+  "apellido": "Registro",
+  "correo": "nuevo@ejemplo.com",
+  "contrasena": "{{Contrasena}}",
+  "confirmarContrasena": "{{Contrasena}}"
+}
+
+### Registro con dato invalido: 400 con { mensaje } (contrasenas que no coinciden)
+POST {{LEN_API_HostAddress}}/api/acceso/registro
+Content-Type: application/json
+
+{
+  "nombre": "Prueba",
+  "apellido": "Registro",
+  "correo": "nuevo@ejemplo.com",
+  "contrasena": "{{Contrasena}}",
+  "confirmarContrasena": "otra-distinta"
+}
+
+### Iniciar sesion (HU-ACC-002). Camino que funciona: 200 con { token, expira, idUsuario, ... }
+POST {{LEN_API_HostAddress}}/api/acceso/iniciar-sesion
+Content-Type: application/json
+
+{
+  "correo": "{{Correo}}",
+  "contrasena": "{{Contrasena}}"
+}
+
+### Iniciar sesion con contrasena mala: 400 con el mismo mensaje que un correo inexistente
+POST {{LEN_API_HostAddress}}/api/acceso/iniciar-sesion
+Content-Type: application/json
+
+{
+  "correo": "{{Correo}}",
+  "contrasena": "no-es-esta"
+}
+
+### Quien es el dueno del token: 200 con { idUsuario, nombreRol }
+GET {{LEN_API_HostAddress}}/api/acceso/yo
+Authorization: Bearer {{Token}}
+
+### Lo mismo sin token: 401
+GET {{LEN_API_HostAddress}}/api/acceso/yo
+
+### Ruta solo de Administrador con token de Cliente: 403. Con token de administrador: 204
+GET {{LEN_API_HostAddress}}/api/diagnostico/solo-administrador
+Authorization: Bearer {{Token}}

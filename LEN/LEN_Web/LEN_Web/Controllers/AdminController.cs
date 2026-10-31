@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using LEN_Web.Utilidades;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
-    // Pantallas del panel. Son solo del rol Administrador, pero el atributo
-    // Authorize entra cuando se configure la autenticacion: hoy no hay esquema
-    // registrado y poner Authorize reventaria la vista
+    // Pantallas del panel. Solo del rol Administrador
+    [Authorize(Roles = "Administrador")]
     public class AdminController : Controller
     {
         private readonly IWebHostEnvironment _entorno;

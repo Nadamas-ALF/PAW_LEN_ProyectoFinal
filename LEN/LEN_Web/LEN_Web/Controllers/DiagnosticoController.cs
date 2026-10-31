@@ -5,11 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LEN_Web.Controllers
 {
     // Solo para comprobar en desarrollo el recorrido completo: ClienteApi, API y avisos.
-<<<<<<< Updated upstream
-    // Fuera de Development responde 404
-=======
     // En Production responde 404. Staging queda abierto para poder probar UseExceptionHandler
->>>>>>> Stashed changes
     [AllowAnonymous]
     public class DiagnosticoController : Controller
     {
@@ -26,12 +22,6 @@ namespace LEN_Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Probar(string caso, string? retorno)
         {
-<<<<<<< Updated upstream
-            if (!_entorno.IsDevelopment()) return NotFound();
-
-            switch (caso)
-            {
-=======
             if (_entorno.IsProduction()) return NotFound();
 
             switch (caso)
@@ -43,7 +33,6 @@ namespace LEN_Web.Controllers
                 // una excepcion de la propia web, para comprobar UseExceptionHandler
                 case "excepcion":
                     throw new InvalidOperationException("Excepcion provocada en la web. Este texto no debe salir en pantalla.");
->>>>>>> Stashed changes
                 case "estado":
                     var estado = await _api.Obtener<EstadoApi>("diagnostico/estado");
                     Mostrar(estado, $"Base conectada: {estado.Datos?.BaseDeDatos}, {estado.Datos?.Roles} roles.");

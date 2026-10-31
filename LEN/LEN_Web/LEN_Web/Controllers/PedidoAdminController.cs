@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -7,6 +8,7 @@ namespace LEN_Web.Controllers
     //
     // Se llama PedidoAdmin y no Pedido a proposito: el cliente sobre sus propios
     // pedidos es otra cosa y vive en ClienteController
+    [Authorize(Roles = "Administrador")]
     public class PedidoAdminController : Controller
     {
         // Cambiar el estado devuelve stock, anula el pago y anula la factura, y
