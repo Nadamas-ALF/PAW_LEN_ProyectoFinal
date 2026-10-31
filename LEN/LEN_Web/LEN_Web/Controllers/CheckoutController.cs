@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
     // Solo recibe el formulario del checkout. Las pantallas viven en ClienteController
+    [Authorize(Roles = "Cliente")]
     public class CheckoutController : Controller
     {
         // Stub con aviso mientras no exista el API. No redirige a la confirmacion

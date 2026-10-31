@@ -1,0 +1,24 @@
+@*
+Recurso inexistente (404). Layout _LayoutPublico. La muestra HomeController.Estado
+Sale con una ruta que no existe y con un registro que no existe o no es del usuario
+Reusa LenVacio--Pagina igual que Error. Las dos causas se ven igual a proposito
+*@
+@{
+    ViewData["Titulo"] = "P&aacute;gina no encontrada";
+}
+
+<div class="LenVacio LenVacio--Pagina">
+    <i class="bi bi-search LenVacio-Icono" aria-hidden="true"></i>
+
+    <h1 class="LenTitular">No encontramos lo que busca</h1>
+
+    <p class="LenVacio-Texto">
+        La p&aacute;gina no existe o ya no est&aacute; disponible.
+        Revise la direcci&oacute;n o vuelva al inicio.
+    </p>
+
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a class="LenBoton LenBoton--Principal" asp-controller="Home" asp-action="Index">Volver al inicio</a>
+        <a class="LenBoton LenBoton--Secundario" href="/Publico/Catalogo">Ir al cat&aacute;logo</a>
+    </div>
+</div>

@@ -6,7 +6,6 @@ namespace LEN_API.Controllers;
 
 // Solo para comprobar el esqueleto en desarrollo. Fuera de Development responde 404.
 [ApiController]
-[AllowAnonymous]
 [Route("api/diagnostico")]
 public class DiagnosticoController : ControllerBase
 {
@@ -19,6 +18,7 @@ public class DiagnosticoController : ControllerBase
         _entorno = entorno;
     }
 
+    [AllowAnonymous]
     [HttpGet("estado")]
     public async Task<IActionResult> Estado()
     {
@@ -26,6 +26,7 @@ public class DiagnosticoController : ControllerBase
         return Ok(await _servicio.ObtenerEstado());
     }
 
+    [AllowAnonymous]
     [HttpGet("error-negocio")]
     public async Task<IActionResult> ErrorNegocio()
     {
@@ -34,11 +35,21 @@ public class DiagnosticoController : ControllerBase
         return NoContent();
     }
 
+    [AllowAnonymous]
     [HttpGet("error-interno")]
     public async Task<IActionResult> ErrorInterno()
     {
         if (!_entorno.IsDevelopment()) return NotFound();
         await _servicio.ProvocarErrorInterno();
+        return NoContent();
+    }
+
+    // Prueba del 403 del API: con un token de Cliente tiene que negarse
+    [Authorize(Roles = "Administrador")]
+    [HttpGet("solo-administrador")]
+    public IActionResult SoloAdministrador()
+    {
+        if (!_entorno.IsDevelopment()) return NotFound();
         return NoContent();
     }
 }

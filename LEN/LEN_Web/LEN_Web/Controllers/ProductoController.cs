@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -7,6 +8,7 @@ namespace LEN_Web.Controllers
     //
     // Los siete son stubs. Vuelven a la pantalla de donde salio el formulario con
     // un aviso de que falta el API, y ninguno finge haber guardado nada
+    [Authorize(Roles = "Administrador")]
     public class ProductoController : Controller
     {
         private const string Pendiente =

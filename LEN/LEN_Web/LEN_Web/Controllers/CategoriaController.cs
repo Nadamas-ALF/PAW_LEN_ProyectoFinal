@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -6,6 +7,7 @@ namespace LEN_Web.Controllers
     // Admin/Categorias y las dos modales viven ahi
     //
     // Los tres son stubs y vuelven a la pantalla con el aviso de pendiente
+    [Authorize(Roles = "Administrador")]
     public class CategoriaController : Controller
     {
         private const string Pendiente =

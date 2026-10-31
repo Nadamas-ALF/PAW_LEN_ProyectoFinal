@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -8,6 +9,7 @@ namespace LEN_Web.Controllers
     // Se llama Usuario y no Cuenta a proposito: Cuenta es el cliente sobre sus
     // propios datos y vive en CuentaController. Aca el IdUsuario viaja en el
     // formulario porque se actua sobre otra persona
+    [Authorize(Roles = "Administrador")]
     public class UsuarioController : Controller
     {
         private const string Pendiente =

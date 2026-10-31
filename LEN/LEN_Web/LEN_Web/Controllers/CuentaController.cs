@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
@@ -7,6 +8,7 @@ namespace LEN_Web.Controllers
     //
     // Los cinco son stubs: vuelven a la pantalla con un aviso de que falta el
     // API. Ninguno finge haber guardado algo
+    [Authorize(Roles = "Cliente")]
     public class CuentaController : Controller
     {
         private const string Pendiente =
