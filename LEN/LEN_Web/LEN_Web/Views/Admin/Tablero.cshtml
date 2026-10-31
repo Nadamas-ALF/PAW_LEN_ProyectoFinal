@@ -23,24 +23,6 @@ El color del punto de actividad sale de TB_ESTADO_PEDIDO.ClaseCss
             Clase = "LenBoton LenBoton--Grafito" },
     ] })" />
 
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Error,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 <section class="row g-4 mb-4" aria-label="Indicadores principales">
 
     <div class="col-12 col-sm-6 col-xl-3">

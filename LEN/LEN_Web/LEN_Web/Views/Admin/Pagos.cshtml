@@ -24,23 +24,6 @@ Aca los indicadores no llevan icono, a diferencia de los del tablero
     Titulo = "Administraci&oacute;n de pagos",
     Texto = "Pagos simulados registrados por la tienda. Solo consulta." })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Clases = "mb-3" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Error,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 
 <section class="row g-4 mb-4" aria-label="Indicadores de pagos">
 

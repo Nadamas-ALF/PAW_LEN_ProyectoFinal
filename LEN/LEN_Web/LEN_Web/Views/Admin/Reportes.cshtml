@@ -23,14 +23,6 @@ Exportar no existe y el boton queda deshabilitado
     </div>
 </div>
 
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Aviso,
-        Clases = "mb-4" })" />
-}
-
 
 <form method="get" asp-controller="Admin" asp-action="Reportes" class="LenFiltros mb-4">
     <div>

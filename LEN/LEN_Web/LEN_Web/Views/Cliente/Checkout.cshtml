@@ -17,23 +17,6 @@ Sin direcciones registradas el boton de confirmar queda deshabilitado
     </div>
 </div>
 
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Aviso,
-        Clases = "mb-4" })" />
-}
-
 <form method="post" action="/Checkout/Confirmar">
     @Html.AntiForgeryToken()
 

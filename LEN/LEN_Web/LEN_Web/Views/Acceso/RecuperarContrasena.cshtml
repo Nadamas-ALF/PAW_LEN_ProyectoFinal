@@ -16,15 +16,6 @@ Todavia no hay accion POST, falta conectar SP_Usuario_AsignarContrasenaTemporal 
             <p class="LenTexto LenTexto--Guia mt-2 mb-0">Ingrese el correo electr&oacute;nico asociado a su cuenta.</p>
         </div>
 
-        @if (TempData["MensajePendiente"] is string pendiente)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel {
-                Titulo = pendiente,
-                Variante = VarianteAviso.Aviso,
-                Cerrable = true,
-                Clases = "mb-4" })" />
-        }
-
         <form method="post" action="/Acceso/RecuperarContrasena" novalidate>
             @Html.AntiForgeryToken()
 

@@ -19,13 +19,4 @@ POST a Producto/Crear. El procedimiento rechaza pieza unica con stock mayor a 1
     Titulo = "Nuevo producto",
     Texto = "Complete los datos del producto. Luego podr&aacute; agregar sus im&aacute;genes." })" />
 
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 <partial name="_ProductoFormulario" model="Model" />

@@ -29,33 +29,6 @@ La modal de editar es una sola y len.js la llena con los data- de la fila
             Clase = "LenBoton LenBoton--Principal" },
     ] })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Cerrable = true,
-        Clases = "mb-3" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Error,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 
 <section class="row g-4 mb-4" aria-label="Indicadores de usuarios">
 

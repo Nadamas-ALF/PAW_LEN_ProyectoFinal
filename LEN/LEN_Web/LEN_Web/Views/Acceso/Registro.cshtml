@@ -21,15 +21,6 @@ El hash de la contrasena se calcula en el API nunca en la base ni en el navegado
             <p class="LenTexto LenTexto--Guia mt-2 mb-0">Complete sus datos para registrarse en LEN.</p>
         </div>
 
-        @if (TempData["MensajePendiente"] is string pendiente)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel {
-                Titulo = pendiente,
-                Variante = VarianteAviso.Aviso,
-                Cerrable = true,
-                Clases = "mb-4" })" />
-        }
-
         <form method="post" action="/Acceso/Registro" autocomplete="off">
             @Html.AntiForgeryToken()
 

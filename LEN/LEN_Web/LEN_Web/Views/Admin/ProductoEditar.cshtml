@@ -26,21 +26,4 @@ El estado no es campo del formulario: se cambia en la tabla con SP_Producto_Camb
             Url = Url.Action("ProductoImagenes", "Admin", new { idProducto = Model.IdProducto }) },
     ] })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 <partial name="_ProductoFormulario" model="Model" />

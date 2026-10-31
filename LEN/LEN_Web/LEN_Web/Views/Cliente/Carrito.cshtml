@@ -17,14 +17,6 @@ Una linea pedida por encima del stock bloquea el boton de pagar
     </div>
 </div>
 
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Aviso,
-        Clases = "mb-4" })" />
-}
-
 @* Lo rellena el JavaScript al cambiar una cantidad o eliminar una linea *@
 <partial name="_Aviso" model="@(new AvisoViewModel {
     Titulo = "La cantidad fue actualizada.",

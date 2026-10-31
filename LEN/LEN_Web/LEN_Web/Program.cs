@@ -1,8 +1,18 @@
+using LEN_Web.Utilidades;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IClienteApi, ClienteApi>(cliente =>
+{
+    var url = builder.Configuration["Valores:UrlAPI"]
+        ?? throw new InvalidOperationException("Falta Valores:UrlAPI en la configuracion.");
+    // sin la barra final, las rutas relativas pisarian el ultimo segmento
+    cliente.BaseAddress = new Uri(url.EndsWith('/') ? url : url + "/");
+    cliente.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 

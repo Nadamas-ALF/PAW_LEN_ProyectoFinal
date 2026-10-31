@@ -21,31 +21,6 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
             Url = Url.Action("Productos", "Admin") },
     ] })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Clases = "mb-3" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Aviso,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 
 <div class="LenPanel mb-4">
     @* El enctype multipart es obligatorio para que el archivo llegue *@

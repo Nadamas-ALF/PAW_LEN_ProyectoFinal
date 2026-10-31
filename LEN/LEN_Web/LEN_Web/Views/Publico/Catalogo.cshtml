@@ -20,33 +20,6 @@ El corazon de favoritos lo decide la tarjeta y solo sale con la sesion abierta
     </div>
 </div>
 
-@{
-    var avisoExito = TempData["MensajeExito"] as string;
-    var avisoError = TempData["MensajeError"] as string;
-
-    // El corazon de la tarjeta vuelve aca, asi que el aviso de pendiente del
-    // favorito tiene que caber en esta pantalla o el boton no diria nada
-    var avisoPendiente = TempData["MensajePendiente"] as string;
-}
-
-@if (avisoExito is not null || avisoError is not null || avisoPendiente is not null)
-{
-    <div class="d-grid gap-2 mb-4">
-        @if (avisoExito is not null)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = avisoExito, Variante = VarianteAviso.Exito })" />
-        }
-        @if (avisoError is not null)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = avisoError, Variante = VarianteAviso.Aviso })" />
-        }
-        @if (avisoPendiente is not null)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = avisoPendiente, Variante = VarianteAviso.Aviso, Cerrable = true })" />
-        }
-    </div>
-}
-
 <form method="get" asp-controller="Publico" asp-action="Catalogo" class="LenFiltros mb-5">
     <div class="LenFiltros-Principal">
         <label class="LenSoloLectores" for="Busqueda">Buscar por nombre</label>
