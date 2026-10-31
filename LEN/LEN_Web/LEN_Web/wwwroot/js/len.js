@@ -431,6 +431,97 @@
     }
 
     // ----------------------------------------------------------------
+    // 7. Confirmacion de acciones sin vuelta atras
+    // ----------------------------------------------------------------
+
+    // Condiciones para los formularios que solo confirman en ciertos casos.
+    // El nombre sale de data-confirmar-si
+    var CONDICIONES = {
+        // para el boton que activa en vez de desactivar: comparte formulario con el que
+        // si confirma y la vista lo marca asi segun el estado del registro
+        nunca: function () {
+            return false;
+        },
+        // el estado 4 es Cancelado, igual que en motivoDeCancelacion
+        pedidoCancelado: function (formulario) {
+            var estado = formulario.querySelector('#IdEstadoNuevo');
+            return !!estado && estado.value === '4';
+        },
+        // defaultChecked es como llego la casilla: confirma al apagar una cuenta activa
+        cuentaDesactivada: function (formulario) {
+            var casilla = formulario.querySelector('#Activo');
+            return !!casilla && casilla.defaultChecked && !casilla.checked;
+        }
+    };
+
+    // Los textos salen de atributos y se pintan con textContent, asi un nombre de
+    // producto con signos raros no se interpreta como HTML
+    function confirmarAcciones() {
+        var modal = document.getElementById('ConfirmarAccion');
+        var boton = document.getElementById('BotonConfirmarAccion');
+
+        if (!modal || !boton) {
+            return;
+        }
+
+        var pendiente = null;
+
+        function llenarCuerpo(texto, nombre) {
+            var cuerpo = modal.querySelector('.modal-body p');
+            var partes = texto.split('{nombre}');
+
+            cuerpo.textContent = '';
+            cuerpo.appendChild(document.createTextNode(partes[0]));
+
+            for (var i = 1; i < partes.length; i++) {
+                var negrita = document.createElement('strong');
+                negrita.textContent = nombre;
+                cuerpo.appendChild(negrita);
+                cuerpo.appendChild(document.createTextNode(partes[i]));
+            }
+        }
+
+        document.addEventListener('submit', function (evento) {
+            var formulario = evento.target;
+
+            if (!formulario.hasAttribute || !formulario.hasAttribute('data-confirmar-titulo')) {
+                return;
+            }
+
+            var condicion = formulario.getAttribute('data-confirmar-si');
+
+            if (condicion && !(CONDICIONES[condicion] && CONDICIONES[condicion](formulario))) {
+                return;
+            }
+
+            evento.preventDefault();
+            pendiente = formulario;
+
+            modal.querySelector('.modal-title').textContent = formulario.getAttribute('data-confirmar-titulo');
+            llenarCuerpo(formulario.getAttribute('data-confirmar-cuerpo') || '',
+                formulario.getAttribute('data-confirmar-nombre') || '');
+            boton.textContent = formulario.getAttribute('data-confirmar-boton') || 'Confirmar';
+
+            bootstrap.Modal.getOrCreateInstance(modal).show();
+        });
+
+        boton.addEventListener('click', function () {
+            var formulario = pendiente;
+            pendiente = null;
+            bootstrap.Modal.getOrCreateInstance(modal).hide();
+
+            // submit() no dispara el evento de nuevo, asi que no vuelve a preguntar
+            if (formulario) {
+                formulario.submit();
+            }
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            pendiente = null;
+        });
+    }
+
+    // ----------------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', function () {
         contrasenasVisibles();
@@ -440,5 +531,6 @@
         visorDeImagenes();
         cascadaDeUbicacion();
         accionesSinServidor();
+        confirmarAcciones();
     });
 })();

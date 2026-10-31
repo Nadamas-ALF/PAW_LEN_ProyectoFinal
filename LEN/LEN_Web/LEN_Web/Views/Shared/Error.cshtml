@@ -1,7 +1,8 @@
 ﻿@*
 Pagina de error. Layout _LayoutPublico. Sale con un 500 del API o cuando la web falla
 Nunca muestra el mensaje de la excepcion ni la consulta ni el rastro de pila
-CodigoReferencia sera el IdError de TB_ERROR. Hoy va nulo y la linea no aparece
+CodigoReferencia es el IdError de TB_ERROR cuando el fallo vino del API (ver PaginaError).
+Si el fallo fue de la propia web, o la base no pudo registrarlo, va nulo y la linea no aparece
 Pendiente decidir las pantallas 404 y 403, que reusan LenVacio--Pagina
 *@
 @model LEN_Web.Models.ErrorViewModel

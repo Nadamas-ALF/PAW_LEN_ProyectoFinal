@@ -94,7 +94,10 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
                             </form>
                         }
 
-                        <form method="post" action="/Producto/EliminarImagen">
+                        <form method="post" action="/Producto/EliminarImagen"
+                              data-confirmar-titulo="Eliminar imagen"
+                              data-confirmar-cuerpo="Va a eliminar esta imagen del producto. No se puede deshacer."
+                              data-confirmar-boton="Eliminar">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@imagen.IdImagen">
                             <input type="hidden" name="idProducto" value="@Model.IdProducto">

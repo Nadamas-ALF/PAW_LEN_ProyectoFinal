@@ -52,7 +52,11 @@ pudiendose corregir
 
         @if (direccion.Activo)
         {
-            <form class="@Model.ClaseFormulario" method="post" action="@Model.RutaDesactivar">
+            <form class="@Model.ClaseFormulario" method="post" action="@Model.RutaDesactivar"
+                  data-confirmar-titulo="Desactivar direcci&oacute;n"
+                  data-confirmar-cuerpo="Va a desactivar la direcci&oacute;n de {nombre}."
+                  data-confirmar-nombre="@direccion.NombreDestinatario"
+                  data-confirmar-boton="Desactivar">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
                 @if (Model.IdUsuario.HasValue)
