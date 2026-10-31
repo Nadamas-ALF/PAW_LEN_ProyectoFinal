@@ -10,4 +10,13 @@ public interface IUsuarioRepositorio
 
     // Lectura por EF con el rol incluido, o null si el correo no existe
     Task<TB_USUARIO?> ObtenerPorCorreo(string correo);
+
+    // Lo mismo por id
+    Task<TB_USUARIO?> ObtenerPorId(int idUsuario);
+
+    // SP_Usuario_AsignarContrasenaTemporal. Reemplaza la contrasena y marca la nueva como temporal
+    Task AsignarContrasenaTemporal(int idUsuarioAccion, int idUsuario, string contrasenaHash, DateTime vigencia);
+
+    // SP_Usuario_RestablecerContrasena. Deja la contrasena como definitiva y limpia la marca de temporal
+    Task RestablecerContrasena(int idUsuarioAccion, int idUsuario, string contrasenaHash);
 }

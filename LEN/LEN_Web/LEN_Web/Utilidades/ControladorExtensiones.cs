@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using LEN_Web.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Utilidades
@@ -17,6 +19,18 @@ namespace LEN_Web.Utilidades
                 RequestId = Activity.Current?.Id ?? controlador.HttpContext.TraceIdentifier,
                 CodigoReferencia = resultado.CodigoReferencia?.ToString()
             });
+        }
+
+        // Para un SinPermiso del API. Un 401 con la sesion abierta es un token vencido o una
+        // llave cambiada: se cierra la sesion y se manda a entrar de nuevo. Un 403 es un rol que no alcanza
+        public static async Task<IActionResult> SinPermiso(this Controller controlador, ResultadoApi resultado)
+        {
+            if (resultado.Estado != StatusCodes.Status401Unauthorized)
+                return controlador.Forbid();
+
+            await controlador.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            controlador.TempData["MensajeAviso"] = "Su sesi&oacute;n venci&oacute;. Inicie sesi&oacute;n de nuevo.";
+            return controlador.RedirectToAction("IniciarSesion", "Acceso");
         }
     }
 }

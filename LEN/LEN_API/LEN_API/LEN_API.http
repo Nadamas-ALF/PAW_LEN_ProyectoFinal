@@ -73,3 +73,95 @@ GET {{LEN_API_HostAddress}}/api/acceso/yo
 ### Ruta solo de Administrador con token de Cliente: 403. Con token de administrador: 204
 GET {{LEN_API_HostAddress}}/api/diagnostico/solo-administrador
 Authorization: Bearer {{Token}}
+
+### F6 - Contrasena temporal
+@TokenAdmin = pegar-aqui-el-token-de-un-administrador
+@IdUsuario = 2
+
+### Recuperacion (HU-ACC-004): 204 siempre, exista el correo o no
+POST {{LEN_API_HostAddress}}/api/acceso/recuperacion
+Content-Type: application/json
+
+{
+  "correo": "{{Correo}}"
+}
+
+### Recuperacion con dato invalido: 400 (falta el correo)
+POST {{LEN_API_HostAddress}}/api/acceso/recuperacion
+Content-Type: application/json
+
+{
+  "correo": ""
+}
+
+### Cambiar contrasena (HU-CLI-003), cuenta sin temporal: 200 con sesion nueva. Pide la actual
+POST {{LEN_API_HostAddress}}/api/acceso/cambiar-contrasena
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "contrasenaActual": "{{Contrasena}}",
+  "contrasena": "una-nueva-clave-1",
+  "confirmarContrasena": "una-nueva-clave-1"
+}
+
+### Cambiar contrasena con la actual equivocada: 400
+POST {{LEN_API_HostAddress}}/api/acceso/cambiar-contrasena
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "contrasenaActual": "no-es-esta",
+  "contrasena": "una-nueva-clave-1",
+  "confirmarContrasena": "una-nueva-clave-1"
+}
+
+### Cambio obligatorio (HU-ACC-006): con el token de una sesion de temporal no pide la actual. 200
+POST {{LEN_API_HostAddress}}/api/acceso/cambiar-contrasena
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "contrasena": "una-nueva-clave-1",
+  "confirmarContrasena": "una-nueva-clave-1"
+}
+
+### Cambiar contrasena sin token: 401
+POST {{LEN_API_HostAddress}}/api/acceso/cambiar-contrasena
+Content-Type: application/json
+
+{
+  "contrasena": "una-nueva-clave-1",
+  "confirmarContrasena": "una-nueva-clave-1"
+}
+
+### Asignar temporal generada por el API (HU-USR-005): 200 con { vigencia, correoEnviado, contrasenaGenerada }
+POST {{LEN_API_HostAddress}}/api/usuarios/{{IdUsuario}}/contrasena-temporal
+Authorization: Bearer {{TokenAdmin}}
+Content-Type: application/json
+
+{}
+
+### Asignar temporal escrita por el administrador: 200, contrasenaGenerada null
+POST {{LEN_API_HostAddress}}/api/usuarios/{{IdUsuario}}/contrasena-temporal
+Authorization: Bearer {{TokenAdmin}}
+Content-Type: application/json
+
+{
+  "contrasena": "una-temporal-1",
+  "confirmarContrasena": "una-temporal-1"
+}
+
+### Usuario inexistente: 400
+POST {{LEN_API_HostAddress}}/api/usuarios/999999/contrasena-temporal
+Authorization: Bearer {{TokenAdmin}}
+Content-Type: application/json
+
+{}
+
+### Con token de Cliente: 403. Sin token: 401
+POST {{LEN_API_HostAddress}}/api/usuarios/{{IdUsuario}}/contrasena-temporal
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{}

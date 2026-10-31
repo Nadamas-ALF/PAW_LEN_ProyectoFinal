@@ -1,7 +1,7 @@
 @*
 Recuperar contrasena. Layout _LayoutPublico. Publica
 Formulario: POST a /Acceso/RecuperarContrasena con antifalsificacion. Solo Correo
-Todavia no hay accion POST, falta conectar SP_Usuario_AsignarContrasenaTemporal desde LEN_API
+El aviso de resultado lo pinta el layout. El API responde 204 exista el correo o no (RQNF-SEC-005)
 *@
 @model LEN_Web.Models.RecuperarContrasenaViewModel
 @{
@@ -31,14 +31,6 @@ Todavia no hay accion POST, falta conectar SP_Usuario_AsignarContrasenaTemporal 
         <p class="LenAyuda mt-3">
             Revise la bandeja de entrada y la carpeta de correo no deseado.
         </p>
-
-        @if (TempData["MensajeEnviado"] is not null)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel {
-                Titulo = "Si el correo est&aacute; registrado, en unos minutos va a recibir un mensaje con las instrucciones para recuperar el acceso.",
-                Variante = VarianteAviso.Info,
-                Clases = "mt-4" })" />
-        }
 
         <p class="mt-4 mb-0">
             &iquest;Record&oacute; su contrase&ntilde;a?

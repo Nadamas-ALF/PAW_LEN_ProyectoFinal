@@ -45,13 +45,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // acceso denegado por defecto: lo publico se marca a mano con [AllowAnonymous]
+// Una sesion con contrasena temporal pendiente no pasa de aca: solo puede cambiarla.
+// Esa regla vive en el API y no solo en la pantalla (HU-ACC-006)
+var politicaNormal = new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser()
+    .RequireAssertion(contexto => contexto.User.FindFirst("TieneContrasenaTemporal")?.Value != "true")
+    .Build();
+
 builder.Services.AddAuthorizationBuilder()
-    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+    .SetDefaultPolicy(politicaNormal)
+    .SetFallbackPolicy(politicaNormal)
+    .AddPolicy("CualquierSesion", politica => politica.RequireAuthenticatedUser());
+
+builder.Services.Configure<OpcionesCorreo>(builder.Configuration.GetSection("Correo"));
+builder.Services.Configure<OpcionesContrasenaTemporal>(builder.Configuration.GetSection("ContrasenaTemporal"));
+builder.Services.AddSingleton<IServicioCorreo, ServicioCorreo>();
 
 builder.Services.AddSingleton<IPasswordHasher<string>, PasswordHasher<string>>();
 builder.Services.AddSingleton<IEmisorToken, EmisorToken>();
 builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 builder.Services.AddScoped<IAccesoServicio, AccesoServicio>();
+builder.Services.AddScoped<IUsuarioServicio, UsuarioServicio>();
 
 builder.Services.AddSingleton<IRegistroErrores, RegistroErrores>();
 builder.Services.AddScoped<IDiagnosticoRepositorio, DiagnosticoRepositorio>();
@@ -74,6 +88,13 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Sin cuenta de envio solo se tolera en desarrollo: en otro entorno es un error de arranque
+if (!app.Environment.IsDevelopment()
+    && !app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpcionesCorreo>>().Value.EstaConfigurado)
+{
+    throw new InvalidOperationException("Falta configurar la seccion Correo. Ver CONTRATO_API.md, seccion 5.");
+}
 
 app.UseMiddleware<MiddlewareErrores>();
 

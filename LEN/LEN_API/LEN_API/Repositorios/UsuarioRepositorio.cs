@@ -35,4 +35,31 @@ public class UsuarioRepositorio : IUsuarioRepositorio
             .Include(u => u.IdRolNavigation)
             .FirstOrDefaultAsync(u => u.Correo == correo);
     }
+
+    public async Task<TB_USUARIO?> ObtenerPorId(int idUsuario)
+    {
+        return await _contexto.TB_USUARIO
+            .AsNoTracking()
+            .Include(u => u.IdRolNavigation)
+            .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
+    }
+
+    public async Task AsignarContrasenaTemporal(int idUsuarioAccion, int idUsuario, string contrasenaHash, DateTime vigencia)
+    {
+        await _contexto.Database.ExecuteSqlAsync($@"
+            EXEC dbo.SP_Usuario_AsignarContrasenaTemporal
+                @IdUsuarioAccion = {idUsuarioAccion},
+                @IdUsuario = {idUsuario},
+                @ContrasenaHash = {contrasenaHash},
+                @Vigencia = {vigencia}");
+    }
+
+    public async Task RestablecerContrasena(int idUsuarioAccion, int idUsuario, string contrasenaHash)
+    {
+        await _contexto.Database.ExecuteSqlAsync($@"
+            EXEC dbo.SP_Usuario_RestablecerContrasena
+                @IdUsuarioAccion = {idUsuarioAccion},
+                @IdUsuario = {idUsuario},
+                @ContrasenaHash = {contrasenaHash}");
+    }
 }

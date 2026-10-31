@@ -54,6 +54,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseMiddleware<MiddlewareContrasenaTemporal>();
 app.UseAuthorization();
 
 app.MapStaticAssets().AllowAnonymous();
