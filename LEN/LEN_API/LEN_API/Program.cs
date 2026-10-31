@@ -1,14 +1,44 @@
+using LEN_API.Datos;
+using LEN_API.Dtos;
+using LEN_API.Infraestructura;
+using LEN_API.Repositorios;
+using LEN_API.Servicios;
+using Microsoft.AspNetCore.Mvc;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var cadenaConexion = builder.Configuration.GetConnectionString("BD_LEN")
+    ?? throw new InvalidOperationException("Falta ConnectionStrings:BD_LEN. Ver el LEEME.txt de BaseDeDatos.");
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// la fabrica sirve al registro de errores (conexion propia); el contexto con
+// alcance de peticion sale de la misma fabrica para compartir opciones
+builder.Services.AddDbContextFactory<ContextoLen>(opciones => opciones.UseSqlServer(cadenaConexion));
+builder.Services.AddScoped(proveedor => proveedor.GetRequiredService<IDbContextFactory<ContextoLen>>().CreateDbContext());
+
+builder.Services.AddSingleton<IRegistroErrores, RegistroErrores>();
+builder.Services.AddScoped<IDiagnosticoRepositorio, DiagnosticoRepositorio>();
+builder.Services.AddScoped<IDiagnosticoServicio, DiagnosticoServicio>();
+
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(opciones =>
+    {
+        // un 400 de validacion tiene la misma forma que uno de negocio: { mensaje }
+        opciones.InvalidModelStateResponseFactory = contexto =>
+        {
+            var mensaje = contexto.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m))
+                ?? "Los datos enviados no son válidos.";
+            return new BadRequestObjectResult(new RespuestaMensajeDto { Mensaje = mensaje });
+        };
+    });
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseMiddleware<MiddlewareErrores>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

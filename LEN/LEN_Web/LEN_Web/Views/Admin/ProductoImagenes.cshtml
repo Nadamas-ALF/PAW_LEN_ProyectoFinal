@@ -140,3 +140,20 @@ else
         Texto = "Suba al menos una imagen para mostrarla en el cat&aacute;logo.",
         Clases = "mt-4" })" />
 }
+
+
+@* El visor que el original anunciaba y no traia. len.js le pone la imagen
+   del marcador que se apreto. Un marcador sin imagen no lo abre *@
+<div class="modal fade LenModal" id="VisorImagen" tabindex="-1" aria-labelledby="TituloVisorImagen" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="TituloVisorImagen">Imagen del producto</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" alt="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>

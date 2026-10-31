@@ -1,6 +1,15 @@
-@LEN_API_HostAddress = http://localhost:5276
+@LEN_API_HostAddress = https://localhost:7195
 
-GET {{LEN_API_HostAddress}}/weatherforecast/
+### F2 - Esqueleto. Solo responde en Development; fuera de ahi da 404.
+
+### Camino que funciona: 200 con { baseDeDatos, roles, distritos }
+GET {{LEN_API_HostAddress}}/api/diagnostico/estado
 Accept: application/json
 
-###
+### Regla de negocio incumplida (THROW 50000): 400 con { mensaje }
+GET {{LEN_API_HostAddress}}/api/diagnostico/error-negocio
+Accept: application/json
+
+### Fallo interno: 500 con { mensaje generico, codigoReferencia } y una fila nueva en TB_ERROR
+GET {{LEN_API_HostAddress}}/api/diagnostico/error-interno
+Accept: application/json
