@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace LEN_API.Dtos;
 
 // Los mismos limites que RegistroViewModel del Web y que el CHECK de la base.
-// Terminos no viaja: lo valida el Web (ver DEC-005)
+// No hay aceptacion de terminos: DEC-005 la retiro del registro y HU-ACC-007 quedo pendiente
 public class RegistroDto
 {
     [Required(ErrorMessage = "El nombre es obligatorio.")]

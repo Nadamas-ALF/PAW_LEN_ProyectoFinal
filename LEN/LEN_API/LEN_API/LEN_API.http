@@ -78,6 +78,11 @@ Authorization: Bearer {{Token}}
 @TokenAdmin = pegar-aqui-el-token-de-un-administrador
 @IdUsuario = 2
 
+### Prueba del SMTP sola, sin pasar por la recuperacion (Development): 200 con { mensaje }
+### Si el envio falla: 500 con codigoReferencia, y el motivo real queda en TB_ERROR
+GET {{LEN_API_HostAddress}}/api/diagnostico/correo?destino=cambiar-por-un-buzon-real
+Accept: application/json
+
 ### Recuperacion (HU-ACC-004): 204 siempre, exista el correo o no
 POST {{LEN_API_HostAddress}}/api/acceso/recuperacion
 Content-Type: application/json

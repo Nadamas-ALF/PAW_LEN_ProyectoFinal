@@ -84,7 +84,6 @@ namespace LEN_Web.Controllers
         {
             if (!ModelState.IsValid) return View(modelo);
 
-            // Terminos lo valida el Web y no viaja: el procedimiento no lo guarda
             var resultado = await _api.Enviar(HttpMethod.Post, "acceso/registro", new
             {
                 modelo.Nombre,

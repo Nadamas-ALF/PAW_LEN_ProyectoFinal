@@ -32,9 +32,5 @@ namespace LEN_Web.Models
         [Compare(nameof(Contrasena), ErrorMessage = "Las dos contraseñas no coinciden.")]
         [DataType(DataType.Password)]
         public string ConfirmarContrasena { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Debe aceptar los términos para continuar.")]
-        [Range(typeof(bool), "true", "true", ErrorMessage = "Debe aceptar los términos para continuar.")]
-        public bool Terminos { get; set; }
     }
 }
