@@ -24,31 +24,6 @@ Sin factura la columna dice Pedido # mas el Id, y eso lo arma el modelo
     Titulo = "Gesti&oacute;n de pedidos",
     Texto = "Preparaci&oacute;n y seguimiento de las ventas de la tienda." })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Clases = "mb-3" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Aviso,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 
 <form method="get" asp-controller="Admin" asp-action="Pedidos" class="LenFiltros mb-4">
     <div class="LenFiltros-Principal">

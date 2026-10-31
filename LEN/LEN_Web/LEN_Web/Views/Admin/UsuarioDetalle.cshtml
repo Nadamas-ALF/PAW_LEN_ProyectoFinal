@@ -22,33 +22,6 @@ con Cliente/EditarCuenta. Aqui las modales llevan el IdUsuario del usuario visto
     Titulo = "Detalle del usuario",
     Texto = "Datos, acceso y direcciones de la cuenta." })" />
 
-@if (TempData["MensajeExito"] is string mensajeExito)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeExito,
-        Variante = VarianteAviso.Exito,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajeError"] is string mensajeError)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = mensajeError,
-        Variante = VarianteAviso.Error,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
-@if (TempData["MensajePendiente"] is string pendiente)
-{
-    <partial name="_Aviso" model="@(new AvisoViewModel {
-        Titulo = pendiente,
-        Variante = VarianteAviso.Aviso,
-        Cerrable = true,
-        Clases = "mb-4" })" />
-}
-
 <div class="row g-4">
 
     <div class="col-12 col-xl-4">

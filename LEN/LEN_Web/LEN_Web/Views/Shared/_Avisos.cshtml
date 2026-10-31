@@ -1,0 +1,33 @@
+@*
+Avisos de resultado de la accion anterior. Lo pintan los dos layouts, una sola vez, antes del cuerpo
+Lee las cuatro claves de TempData: MensajeExito, MensajeError, MensajeAviso y MensajePendiente
+Los textos llegan como HTML (con entidades). Si vienen del API, el controlador usa MensajeHtml
+*@
+@{
+    var exito = TempData["MensajeExito"] as string;
+    var error = TempData["MensajeError"] as string;
+    var aviso = TempData["MensajeAviso"] as string;
+    var pendiente = TempData["MensajePendiente"] as string;
+}
+
+@if (exito is not null || error is not null || aviso is not null || pendiente is not null)
+{
+    <div class="d-grid gap-3 mb-4">
+        @if (exito is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = exito, Variante = VarianteAviso.Exito, Cerrable = true })" />
+        }
+        @if (error is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = error, Variante = VarianteAviso.Error, Cerrable = true })" />
+        }
+        @if (aviso is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = aviso, Variante = VarianteAviso.Aviso, Cerrable = true })" />
+        }
+        @if (pendiente is not null)
+        {
+            <partial name="_Aviso" model="@(new AvisoViewModel { Titulo = pendiente, Variante = VarianteAviso.Aviso, Cerrable = true })" />
+        }
+    </div>
+}

@@ -16,24 +16,6 @@ Todavia no hay accion POST en AccesoController, falta conectar el login contra L
             <p class="LenTexto LenTexto--Guia mt-2 mb-0">Ingrese sus datos para acceder a su cuenta LEN.</p>
         </div>
 
-        @if (TempData["MensajeExito"] is string mensajeExito)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel {
-                Titulo = mensajeExito,
-                Variante = VarianteAviso.Exito,
-                Cerrable = true,
-                Clases = "mb-4" })" />
-        }
-
-        @if (TempData["MensajePendiente"] is string pendiente)
-        {
-            <partial name="_Aviso" model="@(new AvisoViewModel {
-                Titulo = pendiente,
-                Variante = VarianteAviso.Aviso,
-                Cerrable = true,
-                Clases = "mb-4" })" />
-        }
-
         <form method="post" action="/Acceso/IniciarSesion" novalidate>
             @Html.AntiForgeryToken()
 
