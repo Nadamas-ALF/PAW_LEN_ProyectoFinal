@@ -1,0 +1,61 @@
+@*
+Cambio obligatorio de contrasena temporal. Layout _LayoutPublico. Solo con sesion abierta
+Formulario: POST a /Acceso/CambiarContrasenaTemporal con antifalsificacion. Contrasena y ConfirmarContrasena
+No pide la actual: es la temporal con la que se acaba de entrar. Mientras la sesion la tenga pendiente,
+cualquier otra pantalla redirige aca (ver MiddlewareContrasenaTemporal). Pantalla nueva, sin origen en la plantilla
+*@
+@model LEN_Web.Models.CambiarContrasenaTemporalViewModel
+@{
+    ViewData["Titulo"] = "Cambiar contrase&ntilde;a";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+
+        <div class="mb-4">
+            <h1 class="LenTitular">Elija su contrase&ntilde;a</h1>
+            <p class="LenTexto LenTexto--Guia mt-2 mb-0">
+                Entr&oacute; con una contrase&ntilde;a temporal. Escriba una definitiva para seguir usando su cuenta.
+            </p>
+        </div>
+
+        <form method="post" action="/Acceso/CambiarContrasenaTemporal" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="LenEtiqueta" asp-for="Contrasena">Nueva contrase&ntilde;a</label>
+                <div class="LenCampoGrupo">
+                    <input asp-for="Contrasena" class="LenCampo" minlength="8" maxlength="255" autocomplete="new-password" required>
+                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono" aria-label="Mostrar u ocultar contrase&ntilde;a">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span class="LenAyuda">Al menos 8 caracteres.</span>
+                <span asp-validation-for="Contrasena" class="LenError"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="LenEtiqueta" asp-for="ConfirmarContrasena">Confirmar contrase&ntilde;a</label>
+                <div class="LenCampoGrupo">
+                    <input asp-for="ConfirmarContrasena" class="LenCampo" minlength="8" maxlength="255" autocomplete="new-password" required>
+                    <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Icono" aria-label="Mostrar u ocultar contrase&ntilde;a">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="ConfirmarContrasena" class="LenError"></span>
+            </div>
+
+            <button type="submit" class="LenBoton LenBoton--Principal LenBoton--Bloque">Guardar contrase&ntilde;a</button>
+        </form>
+
+        <form class="mt-3 text-center" method="post" action="/Acceso/CerrarSesion">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="LenEnlace">Cerrar sesi&oacute;n</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

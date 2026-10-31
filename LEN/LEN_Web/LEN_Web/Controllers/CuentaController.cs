@@ -1,3 +1,4 @@
+using LEN_Web.Utilidades;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,13 @@ namespace LEN_Web.Controllers
         private const string Pendiente =
             "Esta acci&oacute;n todav&iacute;a no est&aacute; conectada: falta el servidor.";
 
+        private readonly IClienteApi _api;
+
+        public CuentaController(IClienteApi api)
+        {
+            _api = api;
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ActualizarDatos()
@@ -24,9 +32,36 @@ namespace LEN_Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CambiarContrasena()
+        public async Task<IActionResult> CambiarContrasena(string? contrasenaActual, string? contrasena, string? confirmarContrasena)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            // el formulario no tiene modelo, asi que las reglas de forma se revisan a mano.
+            // El API las repite: esto solo evita un viaje
+            var error =
+                string.IsNullOrEmpty(contrasenaActual) ? "Escriba su contrase&ntilde;a actual."
+                : string.IsNullOrEmpty(contrasena) || contrasena.Length < 8 ? "La nueva contrase&ntilde;a debe tener al menos 8 caracteres."
+                : contrasena != confirmarContrasena ? "Las dos contrase&ntilde;as no coinciden."
+                : null;
+
+            if (error is not null)
+            {
+                TempData["MensajeError"] = error;
+                return RedirectToAction("EditarCuenta", "Cliente");
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Post, "acceso/cambiar-contrasena",
+                new { contrasenaActual, contrasena, confirmarContrasena });
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("EditarCuenta", "Cliente");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito) return this.PaginaError(resultado);
+
+            // la sesion sigue valida: el token no depende de la contrasena
+            TempData["MensajeExito"] = "Su contrase&ntilde;a fue actualizada.";
             return RedirectToAction("EditarCuenta", "Cliente");
         }
 

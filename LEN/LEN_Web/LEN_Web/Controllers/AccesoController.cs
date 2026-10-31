@@ -8,14 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
-    [AllowAnonymous]
+    // Sin atributo en la clase a proposito: [AllowAnonymous] gana sobre cualquier [Authorize],
+    // asi que cada accion publica lo lleva y las demas quedan protegidas por la politica de respaldo
     public class AccesoController : Controller
     {
-        // Las acciones que todavia no hablan con el API devuelven a la pantalla con un
-        // aviso en vez de fingir que guardaron algo, que es lo que pide RG-123
-        private const string Pendiente =
-            "Esta acci&oacute;n todav&iacute;a no est&aacute; conectada al servidor.";
-
         private const string ClaveRetorno = "RetornoInicioSesion";
 
         private readonly IClienteApi _api;
@@ -28,6 +24,7 @@ namespace LEN_Web.Controllers
         // El formulario manda a /Acceso/IniciarSesion sin query, asi que la ruta a la que
         // volver se guarda aqui entre el GET y el POST
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult IniciarSesion(string? returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl)) TempData[ClaveRetorno] = returnUrl;
@@ -36,6 +33,7 @@ namespace LEN_Web.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> IniciarSesion(LoginViewModel modelo)
         {
@@ -60,6 +58,10 @@ namespace LEN_Web.Controllers
 
             await AbrirSesion(resultado.Datos);
 
+            // HU-ACC-005: entro con una temporal vigente, asi que solo puede ir al cambio obligatorio
+            if (resultado.Datos.TieneContrasenaTemporal)
+                return RedirectToAction(nameof(CambiarContrasenaTemporal));
+
             var retorno = TempData[ClaveRetorno] as string;
             if (Url.IsLocalUrl(retorno)) return LocalRedirect(retorno!);
 
@@ -69,12 +71,14 @@ namespace LEN_Web.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Registro()
         {
             return View(new RegistroViewModel());
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Registro(RegistroViewModel modelo)
         {
@@ -108,17 +112,67 @@ namespace LEN_Web.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult RecuperarContrasena()
         {
             return View(new RecuperarContrasenaViewModel());
         }
 
+        // El aviso es siempre el mismo: exista el correo o no, y salga el envio o no. El
+        // API tambien responde 204 siempre (RQNF-SEC-005)
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public IActionResult RecuperarContrasena(RecuperarContrasenaViewModel modelo)
+        public async Task<IActionResult> RecuperarContrasena(RecuperarContrasenaViewModel modelo)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (!ModelState.IsValid) return View(modelo);
+
+            var resultado = await _api.Enviar(HttpMethod.Post, "acceso/recuperacion", new { modelo.Correo });
+
+            if (!resultado.EsExito) return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Si el correo est&aacute; registrado, en unos minutos va a recibir un mensaje con una contrase&ntilde;a temporal para entrar.";
             return RedirectToAction(nameof(RecuperarContrasena));
+        }
+
+        // HU-ACC-006. Cualquier rol: es lo unico que una sesion con temporal pendiente puede abrir
+        [HttpGet]
+        [Authorize]
+        public IActionResult CambiarContrasenaTemporal()
+        {
+            // quien no tiene temporal pendiente no tiene nada que hacer aca
+            if (User.FindFirst("TieneContrasenaTemporal")?.Value != "true")
+                return RedirectToAction("Index", "Home");
+
+            return View(new CambiarContrasenaTemporalViewModel());
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarContrasenaTemporal(CambiarContrasenaTemporalViewModel modelo)
+        {
+            if (!ModelState.IsValid) return View(new CambiarContrasenaTemporalViewModel());
+
+            var resultado = await _api.Enviar<SesionApi>(HttpMethod.Post, "acceso/cambiar-contrasena",
+                new { modelo.Contrasena, modelo.ConfirmarContrasena });
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return View(new CambiarContrasenaTemporalViewModel());
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null) return this.PaginaError(resultado);
+
+            // el token viejo todavia dice que la contrasena es temporal: se cambia por el nuevo
+            await AbrirSesion(resultado.Datos);
+
+            TempData["MensajeExito"] = "Su contrase&ntilde;a fue actualizada.";
+            return resultado.Datos.IdRol == 1
+                ? RedirectToAction("Tablero", "Admin")
+                : RedirectToAction("Index", "Home");
         }
 
         // Solo del Web: sin cookie no hay token que mandar, asi que no hace falta endpoint

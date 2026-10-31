@@ -10,6 +10,12 @@ public static class TraductorSqlException
     {
         for (var actual = excepcion; actual != null; actual = actual.InnerException)
         {
+            if (actual is ExcepcionNegocio negocio)
+            {
+                mensaje = negocio.Message;
+                return true;
+            }
+
             if (actual is SqlException sql && sql.Number >= 50000)
             {
                 mensaje = sql.Message;

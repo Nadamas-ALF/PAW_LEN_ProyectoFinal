@@ -186,17 +186,20 @@ con Cliente/EditarCuenta. Aqui las modales llevan el IdUsuario del usuario visto
                     </div>
                 </form>
 
-                @* Pendiente de verdad: SP_Usuario_AsignarContrasenaTemporal ya
-                   existe en la base y evita que el administrador la conozca *@
+                @* Las dos opciones terminan en SP_Usuario_AsignarContrasenaTemporal: lo que se
+                   escribe tambien queda como temporal, con vigencia, y el usuario la cambia al entrar *@
                 <p class="LenAyuda mt-4">
-                    En lugar de escribirle una contrase&ntilde;a que el administrador
-                    acaba conociendo, generar una temporal con vigencia y que el
-                    usuario la cambie al entrar.
+                    La contrase&ntilde;a que escriba arriba se guarda como temporal y el usuario
+                    tiene que cambiarla al entrar. Tambi&eacute;n se le env&iacute;a por correo.
+                    Para que el administrador no llegue a conocerla, mejor generar una al azar.
                 </p>
-                <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno mt-2" disabled
-                        title="Contrase&ntilde;a temporal: pendiente">
-                    Generar contrase&ntilde;a temporal
-                </button>
+                <form class="mt-2" method="post" action="/Usuario/GenerarContrasenaTemporal">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
+                    <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">
+                        Generar contrase&ntilde;a temporal
+                    </button>
+                </form>
             </div>
         </article>
 
