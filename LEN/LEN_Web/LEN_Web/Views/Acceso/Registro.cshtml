@@ -4,8 +4,9 @@ Formulario: POST a /Acceso/Registro con antifalsificacion
   Nombre y Apellido obligatorios hasta 100
   Cedula opcional hasta 20 y si se da no puede repetirse
   Telefono opcional hasta 20. Correo obligatorio hasta 150 y unico
-  Contrasena minimo 8 hasta 255. ConfirmarContrasena debe coincidir. Terminos casilla obligatoria
-Terminos lo valida el Web y no viaja al API (pendiente DEC-005)
+  Contrasena minimo 8 hasta 255. ConfirmarContrasena debe coincidir
+La casilla de terminos salio del formulario por DEC-005: pedia aceptar un texto que no
+existe y la base no tiene donde guardar la aceptacion. HU-ACC-007 queda pendiente
 El hash de la contrasena se calcula en el API nunca en la base ni en el navegador
 *@
 @model LEN_Web.Models.RegistroViewModel
@@ -83,14 +84,6 @@ El hash de la contrasena se calcula en el API nunca en la base ni en el navegado
                         </button>
                     </div>
                     <span asp-validation-for="ConfirmarContrasena" class="LenError"></span>
-                </div>
-
-                <div class="col-12">
-                    <div class="LenOpcion mb-0">
-                        <input asp-for="Terminos" required>
-                        <label asp-for="Terminos">Acepto los t&eacute;rminos y condiciones.</label>
-                    </div>
-                    <span asp-validation-for="Terminos" class="LenError"></span>
                 </div>
 
                 <div class="col-12">

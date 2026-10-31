@@ -65,4 +65,8 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 
+// Una ruta que no existe no tiene endpoint, y sin esto la politica de respaldo manda al
+// login en vez de pintar el 404 (HU-CMP-004)
+app.MapFallbackToController("{*ruta}", "NoEncontrado", "Home");
+
 app.Run();

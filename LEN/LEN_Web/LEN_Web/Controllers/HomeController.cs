@@ -39,6 +39,15 @@ namespace LEN_Web.Controllers
             };
         }
 
+        // Entra por el fallback de Program.cs. Una ruta inexistente no tiene endpoint, y sin
+        // endpoint la politica de respaldo manda al visitante anonimo al inicio de sesion
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult NoEncontrado()
+        {
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return View("NoEncontrado");
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

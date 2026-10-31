@@ -7,4 +7,5 @@ public interface IDiagnosticoServicio
     Task<EstadoBaseDto> ObtenerEstado();
     Task ProvocarErrorDeNegocio();
     Task ProvocarErrorInterno();
+    Task<string> EnviarCorreoDePrueba(string destino);
 }
