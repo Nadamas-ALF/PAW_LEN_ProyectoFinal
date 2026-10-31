@@ -1,0 +1,16 @@
+@*
+Confirmacion unica para toda accion sin vuelta atras. La incluyen los dos layouts, una sola vez
+No se usa directo: un formulario pide la confirmacion con atributos y len.js llena esta modal
+  data-confirmar-titulo   titulo de la modal. Con este atributo el formulario pide confirmar
+  data-confirmar-cuerpo   texto. {nombre} se reemplaza por data-confirmar-nombre, en negrita
+  data-confirmar-nombre   opcional. Nombre del registro afectado
+  data-confirmar-boton    texto del boton rojo. Por defecto Confirmar
+  data-confirmar-si       opcional. Solo confirma si se cumple la condicion que len.js conoce
+Sin JavaScript el formulario se envia sin preguntar
+*@
+<partial name="_ConfirmarModal" model="@(new ConfirmarModalViewModel {
+    Id = "ConfirmarAccion",
+    Titulo = "Confirmar",
+    Cuerpo = string.Empty,
+    TextoConfirmar = "Confirmar",
+    IdBotonConfirmar = "BotonConfirmarAccion" })" />

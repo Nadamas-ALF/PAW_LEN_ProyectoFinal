@@ -140,7 +140,11 @@ Cancelar devuelve stock y anula pago y factura, y no se puede deshacer
 
                 @if (Model.PuedeCambiarEstado)
                 {
-                    <form method="post" action="/PedidoAdmin/CambiarEstado">
+                    <form method="post" action="/PedidoAdmin/CambiarEstado"
+                          data-confirmar-titulo="Cancelar pedido"
+                          data-confirmar-cuerpo="Va a cancelar este pedido. Se devuelve el stock y el pago y la factura quedan anulados. No se puede deshacer."
+                          data-confirmar-boton="Cancelar pedido"
+                          data-confirmar-si="pedidoCancelado">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.IdPedido">
 

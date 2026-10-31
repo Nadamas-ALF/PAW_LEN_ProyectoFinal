@@ -74,7 +74,12 @@ No se desactiva una categoria con productos activos, y la columna Productos lo a
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </button>
 
-                                <form class="m-0" method="post" action="/Categoria/CambiarActivo">
+                                <form class="m-0" method="post" action="/Categoria/CambiarActivo"
+                                      data-confirmar-titulo="Desactivar categor&iacute;a"
+                                      data-confirmar-si="@(categoria.Activo ? null : "nunca")"
+                                      data-confirmar-cuerpo="Va a desactivar la categor&iacute;a {nombre}. Deja de aparecer en el cat&aacute;logo."
+                                      data-confirmar-nombre="@categoria.Nombre"
+                                      data-confirmar-boton="Desactivar">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@categoria.IdCategoria">
                                     @if (categoria.Activo)

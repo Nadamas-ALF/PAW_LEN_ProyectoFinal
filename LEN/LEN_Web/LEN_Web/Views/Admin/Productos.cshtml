@@ -148,8 +148,12 @@ Cada fila lleva su propio formulario de stock para ajustarlo sin salir de la tab
                                     <i class="bi bi-images" aria-hidden="true"></i>
                                 </a>
 
-                                @* Pendiente: confirmar antes de desactivar *@
-                                <form class="m-0" method="post" action="/Producto/CambiarActivo">
+                                <form class="m-0" method="post" action="/Producto/CambiarActivo"
+                                      data-confirmar-titulo="Desactivar producto"
+                                      data-confirmar-si="@(producto.Activo ? null : "nunca")"
+                                      data-confirmar-cuerpo="Va a desactivar {nombre}. Deja de aparecer en el cat&aacute;logo."
+                                      data-confirmar-nombre="@producto.NombreProducto"
+                                      data-confirmar-boton="Desactivar">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@producto.IdProducto">
                                     @if (producto.Activo)

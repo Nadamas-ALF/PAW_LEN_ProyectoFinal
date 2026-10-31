@@ -66,7 +66,12 @@ con Cliente/EditarCuenta. Aqui las modales llevan el IdUsuario del usuario visto
 
         <article class="LenPanel p-0 mb-4">
             <div class="LenPanel-Cabecera"><h2 class="LenPanel-Titulo">Datos del usuario</h2></div>
-            <form class="p-3" method="post" action="/Usuario/Editar">
+            <form class="p-3" method="post" action="/Usuario/Editar"
+                  data-confirmar-titulo="Desactivar cuenta"
+                  data-confirmar-cuerpo="Va a desactivar la cuenta de {nombre}. No va a poder iniciar sesi&oacute;n."
+                  data-confirmar-nombre="@usuario.Nombre @usuario.Apellido"
+                  data-confirmar-boton="Desactivar"
+                  data-confirmar-si="cuentaDesactivada">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="IdUsuario" value="@usuario.IdUsuario">
                 <div class="row g-3">
