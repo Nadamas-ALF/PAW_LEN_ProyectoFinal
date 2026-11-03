@@ -168,6 +168,27 @@ La modal de editar es una sola y len.js la llena con los data- de la fila
                                             data-activo="@usuario.Activo.ToString().ToLowerInvariant()">
                                         <i class="bi bi-pencil" aria-hidden="true"></i> Editar
                                     </button>
+
+                                    <form method="post" action="/Usuario/CambiarActivo"
+                                          data-confirmar-titulo="Cambiar estado del usuario"
+                                          data-confirmar-cuerpo="¿Deseas cambiar el estado de esta cuenta?"
+                                          data-confirmar-boton="Confirmar">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idUsuario" value="@usuario.IdUsuario">
+
+                                        @if (usuario.Activo)
+                                        {
+                                            <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">
+                                                <i class="bi bi-person-x" aria-hidden="true"></i> Desactivar
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">
+                                                <i class="bi bi-person-check" aria-hidden="true"></i> Activar
+                                            </button>
+                                        }
+                                    </form>
                                 </div>
                             </td>
                         </tr>

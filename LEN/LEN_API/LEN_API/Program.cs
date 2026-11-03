@@ -67,6 +67,9 @@ builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 builder.Services.AddScoped<IAccesoServicio, AccesoServicio>();
 builder.Services.AddScoped<IUsuarioServicio, UsuarioServicio>();
 
+builder.Services.AddScoped<IDireccionRepositorio, DireccionRepositorio>();
+builder.Services.AddScoped<IDireccionServicio, DireccionServicio>();
+
 builder.Services.AddSingleton<IRegistroErrores, RegistroErrores>();
 builder.Services.AddScoped<IDiagnosticoRepositorio, DiagnosticoRepositorio>();
 builder.Services.AddScoped<IDiagnosticoServicio, DiagnosticoServicio>();
@@ -100,7 +103,7 @@ app.UseMiddleware<MiddlewareErrores>();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();
