@@ -14,6 +14,8 @@ namespace LEN_Web.Models
     {
         public int IdProducto { get; set; }
 
+        public int TotalFilas { get; set; }
+
         public string NombreProducto { get; set; } = string.Empty;
 
         public string NombreCategoria { get; set; } = string.Empty;

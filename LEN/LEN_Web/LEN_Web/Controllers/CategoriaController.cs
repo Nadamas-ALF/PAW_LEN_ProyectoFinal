@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using LEN_Web.Utilidades;
 
 namespace LEN_Web.Controllers
 {
@@ -10,22 +11,93 @@ namespace LEN_Web.Controllers
     [Authorize(Roles = "Administrador")]
     public class CategoriaController : Controller
     {
+        private readonly IClienteApi _api;
+
+        public CategoriaController(IClienteApi api)
+        {
+            _api = api;
+        }
+
+
         private const string Pendiente =
             "Esta acci&oacute;n todav&iacute;a no est&aacute; conectada: falta el servidor.";
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Crear()
+        public async Task<IActionResult> Crear(string nombre, string? descripcion)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                TempData["MensajeError"] = "El nombre de la categoría es obligatorio.";
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            var datos = new
+            {
+                Nombre = nombre,
+                Descripcion = descripcion
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Post,
+                "categorias",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Categoría registrada correctamente.";
+
             return RedirectToAction("Categorias", "Admin");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Editar()
+        public async Task<IActionResult> Editar(
+            int idCategoria,
+            string nombre,
+            string? descripcion)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (idCategoria <= 0 || string.IsNullOrWhiteSpace(nombre))
+            {
+                TempData["MensajeError"] = "Los datos de la categoría no son válidos.";
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            var datos = new
+            {
+                Nombre = nombre,
+                Descripcion = descripcion
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Put,
+                $"categorias/{idCategoria}",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Categoría actualizada correctamente.";
+
             return RedirectToAction("Categorias", "Admin");
         }
 
@@ -33,9 +105,32 @@ namespace LEN_Web.Controllers
         // procedimiento lanza THROW 50000 y el mensaje sale en esta pantalla
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CambiarActivo(int id)
+        public async Task<IActionResult> CambiarActivo(int id)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (id <= 0)
+            {
+                TempData["MensajeError"] = "La categoría indicada no es válida.";
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Patch,
+                $"categorias/{id}/estado");
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Categorias", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Estado de la categoría actualizado correctamente.";
+
             return RedirectToAction("Categorias", "Admin");
         }
     }

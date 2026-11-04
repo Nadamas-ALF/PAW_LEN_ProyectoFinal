@@ -350,6 +350,30 @@ BEGIN
         WHERE Destacado = 1;
 END;
 
+/* =========================================================
+   ÍNDICES PARA OPTIMIZACIÓN DE CONSULTAS DE PRODUCTOS
+   ========================================================= */
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Producto_Stock_Activo'
+      AND object_id = OBJECT_ID('dbo.TB_PRODUCTO')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_Producto_Stock_Activo
+    ON dbo.TB_PRODUCTO (Stock)
+    INCLUDE (IdProducto, Nombre, EsPiezaUnica, IdCategoria)
+    WHERE Activo = 1;
+END;
+GO
+
+
+
+
+
+
+
 IF OBJECT_ID('dbo.TB_IMAGEN_PRODUCTO', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.TB_IMAGEN_PRODUCTO
@@ -741,3 +765,6 @@ GO
 
 PRINT N'01_esquema.sql: listo.';
 GO
+
+
+
