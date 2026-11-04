@@ -24,11 +24,118 @@ namespace LEN_Web.Controllers
             _api = api;
         }
 
+
+
+        [HttpGet]
+        public async Task<IActionResult> Provincias()
+        {
+            var resultado = await _api.Obtener<List<ProvinciaApi>>(
+                "direcciones/provincias");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito || resultado.Datos is null)
+                return StatusCode(502);
+
+            return Json(resultado.Datos.Select(p => new
+            {
+                id = p.IdProvincia,
+                nombre = p.Nombre
+            }));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Cantones(int idProvincia)
+        {
+            var resultado = await _api.Obtener<List<CantonApi>>(
+                $"direcciones/cantones/{idProvincia}");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito || resultado.Datos is null)
+                return StatusCode(502);
+
+            return Json(resultado.Datos.Select(c => new
+            {
+                id = c.IdCanton,
+                nombre = c.Nombre
+            }));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Distritos(int idCanton)
+        {
+            var resultado = await _api.Obtener<List<DistritoApi>>(
+                $"direcciones/distritos/{idCanton}");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito || resultado.Datos is null)
+                return StatusCode(502);
+
+            return Json(resultado.Datos.Select(d => new
+            {
+                id = d.IdDistrito,
+                nombre = d.Nombre
+            }));
+        }
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Crear()
+        public async Task<IActionResult> Crear(
+    string nombre,
+    string apellido,
+    string? cedula,
+    string? telefono,
+    string correo,
+    string contrasena,
+    int idRol,
+    bool activo = true)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(apellido) ||
+                string.IsNullOrWhiteSpace(correo) ||
+                string.IsNullOrWhiteSpace(contrasena))
+            {
+                TempData["MensajeError"] = "Completa los campos obligatorios.";
+                return RedirectToAction("Usuarios", "Admin");
+            }
+
+            var datos = new
+            {
+                Nombre = nombre,
+                Apellido = apellido,
+                Cedula = cedula,
+                Telefono = telefono,
+                Correo = correo,
+                Contrasena = contrasena,
+                IdRol = idRol,
+                Activo = activo
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Post,
+                "usuarios",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Usuarios", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Usuario registrado correctamente.";
+
             return RedirectToAction("Usuarios", "Admin");
         }
 
@@ -36,10 +143,55 @@ namespace LEN_Web.Controllers
         // se vuelve al detalle, y sin el a la tabla
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Editar(int idUsuario)
+        public async Task<IActionResult> Editar(
+    int idUsuario,
+    string nombre,
+    string apellido,
+    string? cedula,
+    string? telefono,
+    string correo,
+    int idRol,
+    bool activo = false)
         {
-            TempData["MensajePendiente"] = Pendiente;
-            return Volver(idUsuario);
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(apellido) ||
+                string.IsNullOrWhiteSpace(correo))
+            {
+                TempData["MensajeError"] = "Completa los campos obligatorios.";
+                return RedirectToAction("Usuarios", "Admin");
+            }
+
+            var datos = new
+            {
+                Nombre = nombre,
+                Apellido = apellido,
+                Cedula = cedula,
+                Telefono = telefono,
+                Correo = correo,
+                IdRol = idRol,
+                Activo = activo
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Put,
+                $"usuarios/{idUsuario}",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Usuarios", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Usuario actualizado correctamente.";
+
+            return RedirectToAction("Usuarios", "Admin");
         }
 
         // HU-USR-005. El administrador no pide la contrasena actual: esta reponiendo el
@@ -80,25 +232,116 @@ namespace LEN_Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AgregarDireccion(int idUsuario)
+        public async Task<IActionResult> AgregarDireccion(
+            int idUsuario,
+            int idDistrito,
+            string nombreDestinatario,
+            string direccionExacta,
+            string? referencia,
+            string telefonoContacto,
+            bool esPrincipal = false)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            var datos = new
+            {
+                IdDistrito = idDistrito,
+                NombreDestinatario = nombreDestinatario,
+                DireccionExacta = direccionExacta,
+                Referencia = referencia,
+                TelefonoContacto = telefonoContacto,
+                EsPrincipal = esPrincipal
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Post,
+                $"direcciones/usuarios/{idUsuario}",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return Volver(idUsuario);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Dirección registrada correctamente.";
+
             return Volver(idUsuario);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ActualizarDireccion(int idUsuario)
+        public async Task<IActionResult> ActualizarDireccion(
+            int idUsuario,
+            int idDireccion,
+            int idDistrito,
+            string nombreDestinatario,
+            string direccionExacta,
+            string? referencia,
+            string telefonoContacto,
+            bool esPrincipal = false)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            var datos = new
+            {
+                IdDistrito = idDistrito,
+                NombreDestinatario = nombreDestinatario,
+                DireccionExacta = direccionExacta,
+                Referencia = referencia,
+                TelefonoContacto = telefonoContacto,
+                EsPrincipal = esPrincipal
+            };
+
+            var resultado = await _api.Enviar(
+                HttpMethod.Put,
+                $"direcciones/usuarios/{idUsuario}/{idDireccion}",
+                datos);
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return Volver(idUsuario);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Dirección actualizada correctamente.";
+
             return Volver(idUsuario);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DesactivarDireccion(int idUsuario)
+        public async Task<IActionResult> DesactivarDireccion(
+            int idUsuario,
+            int idDireccion)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            var resultado = await _api.Enviar(
+                HttpMethod.Patch,
+                $"direcciones/usuarios/{idUsuario}/{idDireccion}/estado",
+                new { });
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return Volver(idUsuario);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Dirección desactivada correctamente.";
+
             return Volver(idUsuario);
         }
 
@@ -144,5 +387,56 @@ namespace LEN_Web.Controllers
 
             return RedirectToAction("Usuarios", "Admin");
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarActivo(int idUsuario)
+        {
+            var resultado = await _api.Enviar(
+                HttpMethod.Patch,
+                $"usuarios/{idUsuario}/estado",
+                new { }
+            );
+
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return RedirectToAction("Usuarios", "Admin");
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito)
+                return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = "Estado del usuario actualizado correctamente.";
+
+            return RedirectToAction("Usuarios", "Admin");
+        }
+
+
+        private class ProvinciaApi
+        {
+            public int IdProvincia { get; set; }
+            public string Nombre { get; set; } = string.Empty;
+        }
+
+        private class CantonApi
+        {
+            public int IdCanton { get; set; }
+            public string Nombre { get; set; } = string.Empty;
+        }
+
+        private class DistritoApi
+        {
+            public int IdDistrito { get; set; }
+            public string Nombre { get; set; } = string.Empty;
+        }
+
+
     }
+
+
 }

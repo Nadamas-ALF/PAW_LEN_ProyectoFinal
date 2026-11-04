@@ -4,6 +4,7 @@ using LEN_API.Repositorios;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
+
 namespace LEN_API.Servicios;
 
 public class UsuarioServicio : IUsuarioServicio
@@ -76,4 +77,68 @@ public class UsuarioServicio : IUsuarioServicio
         $"Sirve hasta el {vigencia:dd/MM/yyyy HH:mm}. Al entrar le vamos a pedir que escriba una definitiva.\n\n" +
         (string.IsNullOrWhiteSpace(_opcionesCorreo.UrlInicioSesion) ? string.Empty : $"Inicie sesión aquí: {_opcionesCorreo.UrlInicioSesion}\n\n") +
         "Si no esperaba este mensaje, comuníquese con la tienda.\n";
+
+
+
+    public async Task<List<UsuarioAdminDto>> Listar()
+    {
+        return await _repositorio.Listar();
+    }
+
+
+    public async Task<int> RegistrarDesdeAdministracion(
+    int idUsuarioAccion,
+    CrearUsuarioAdminDto datos)
+    {
+        datos.Nombre = datos.Nombre.Trim();
+        datos.Apellido = datos.Apellido.Trim();
+        datos.Correo = datos.Correo.Trim().ToLower();
+
+        datos.Cedula = string.IsNullOrWhiteSpace(datos.Cedula)
+            ? null
+            : datos.Cedula.Trim();
+
+        datos.Telefono = string.IsNullOrWhiteSpace(datos.Telefono)
+            ? null
+            : datos.Telefono.Trim();
+
+        string contrasenaHash = _hasher.HashPassword(
+            string.Empty,
+            datos.Contrasena);
+
+        return await _repositorio.RegistrarDesdeAdministracion(
+            idUsuarioAccion,
+            datos,
+            contrasenaHash);
+    }
+
+
+
+    public async Task ActualizarDesdeAdministracion(
+    int idUsuarioAccion,
+    int idUsuario,
+    ActualizarUsuarioAdminDto datos)
+    {
+        datos.Nombre = datos.Nombre.Trim();
+        datos.Apellido = datos.Apellido.Trim();
+        datos.Correo = datos.Correo.Trim().ToLower();
+
+        datos.Cedula = string.IsNullOrWhiteSpace(datos.Cedula)
+            ? null
+            : datos.Cedula.Trim();
+
+        datos.Telefono = string.IsNullOrWhiteSpace(datos.Telefono)
+            ? null
+            : datos.Telefono.Trim();
+
+        await _repositorio.ActualizarDesdeAdministracion(
+            idUsuarioAccion,
+            idUsuario,
+            datos);
+    }
+
+    public async Task CambiarActivo(int idUsuarioAccion, int idUsuario)
+    {
+        await _repositorio.CambiarActivo(idUsuarioAccion, idUsuario);
+    }
 }

@@ -19,4 +19,21 @@ public interface IUsuarioRepositorio
 
     // SP_Usuario_RestablecerContrasena. Deja la contrasena como definitiva y limpia la marca de temporal
     Task RestablecerContrasena(int idUsuarioAccion, int idUsuario, string contrasenaHash);
+
+    Task<List<UsuarioAdminDto>> Listar();
+
+    Task<int> RegistrarDesdeAdministracion(
+    int idUsuarioAccion,
+    CrearUsuarioAdminDto datos,
+    string contrasenaHash);
+
+    Task ActualizarDesdeAdministracion(
+    int idUsuarioAccion,
+    int idUsuario,
+    ActualizarUsuarioAdminDto datos);
+
+
+    Task CambiarActivo(int idUsuarioAccion, int idUsuario);
+
+
 }

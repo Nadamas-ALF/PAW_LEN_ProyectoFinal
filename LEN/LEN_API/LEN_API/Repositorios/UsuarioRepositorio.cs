@@ -62,4 +62,61 @@ public class UsuarioRepositorio : IUsuarioRepositorio
                 @IdUsuario = {idUsuario},
                 @ContrasenaHash = {contrasenaHash}");
     }
+
+    public async Task<List<UsuarioAdminDto>> Listar()
+    {
+        return await _contexto.Database
+            .SqlQuery<UsuarioAdminDto>($"EXEC dbo.SP_Usuario_Listar")
+            .ToListAsync();
+    }
+
+
+    public async Task<int> RegistrarDesdeAdministracion(
+    int idUsuarioAccion,
+    CrearUsuarioAdminDto datos,
+    string contrasenaHash)
+    {
+        var filas = await _contexto.Database.SqlQuery<RegistroRespuestaDto>($@"
+        EXEC dbo.SP_Usuario_RegistrarDesdeAdministracion
+            @IdUsuarioAccion = {idUsuarioAccion},
+            @Nombre = {datos.Nombre},
+            @Apellido = {datos.Apellido},
+            @Cedula = {datos.Cedula},
+            @Telefono = {datos.Telefono},
+            @Correo = {datos.Correo},
+            @ContrasenaHash = {contrasenaHash},
+            @IdRol = {datos.IdRol},
+            @Activo = {datos.Activo}
+    ").ToListAsync();
+
+        return filas.Single().IdUsuario;
+    }
+
+
+    public async Task ActualizarDesdeAdministracion(
+    int idUsuarioAccion,
+    int idUsuario,
+    ActualizarUsuarioAdminDto datos)
+    {
+        await _contexto.Database.ExecuteSqlAsync($@"
+        EXEC dbo.SP_Usuario_Actualizar
+            @IdUsuarioAccion = {idUsuarioAccion},
+            @IdUsuario = {idUsuario},
+            @Nombre = {datos.Nombre},
+            @Apellido = {datos.Apellido},
+            @Cedula = {datos.Cedula},
+            @Telefono = {datos.Telefono},
+            @Correo = {datos.Correo},
+            @IdRol = {datos.IdRol},
+            @Activo = {datos.Activo}");
+    }
+
+
+    public async Task CambiarActivo(int idUsuarioAccion, int idUsuario)
+    {
+        await _contexto.Database.ExecuteSqlAsync($@"
+        EXEC dbo.SP_Usuario_CambiarActivo
+            @IdUsuarioAccion = {idUsuarioAccion},
+            @IdUsuario = {idUsuario}");
+    }
 }

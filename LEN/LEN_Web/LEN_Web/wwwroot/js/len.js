@@ -320,19 +320,104 @@
         });
     }
 
+
     // ----------------------------------------------------------------
     // 6. Cascada de provincia, canton y distrito
     // ----------------------------------------------------------------
 
-    // Queda a medias a proposito. Los catalogos estan en la base pero no
-    // tienen endpoint, asi que no hay de donde traer los cantones de una
-    // provincia.
-    //
-    // Cuando exista, basta con llenar window.LenUbicaciones o cambiar
-    // this por un fetch: el resto del enganche ya esta hecho.
-    //
-    // Mientras no exista, tocar la provincia no borra lo que el servidor
-    // ya habia dejado puesto: avisa y deja los dos de abajo como estaban
+    async function consultarUbicaciones(url) {
+        var respuesta = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        if (!respuesta.ok) {
+            throw new Error('No fue posible consultar las ubicaciones.');
+        }
+
+        return await respuesta.json();
+    }
+
+    function opcionVacia(texto) {
+        var opcion = document.createElement('option');
+        opcion.value = '';
+        opcion.textContent = texto;
+        return opcion;
+    }
+
+    function llenar(selector, opciones, valorSeleccionado) {
+        selector.innerHTML = '';
+
+        selector.appendChild(opcionVacia('Seleccione'));
+
+        opciones.forEach(function (opcion) {
+            var elemento = new Option(opcion.nombre, opcion.id);
+
+            if (String(opcion.id) === String(valorSeleccionado)) {
+                elemento.selected = true;
+            }
+
+            selector.appendChild(elemento);
+        });
+
+        selector.disabled = opciones.length === 0;
+
+        if (opciones.length === 0) {
+            selector.innerHTML = '';
+            selector.appendChild(opcionVacia('No hay opciones disponibles'));
+        }
+    }
+
+    async function cargarCantones(provincia, canton, distrito, idCanton, idDistrito) {
+        canton.disabled = true;
+        distrito.disabled = true;
+
+        llenar(canton, [], null);
+        llenar(distrito, [], null);
+
+        if (!provincia.value) {
+            return;
+        }
+
+        try {
+            var cantones = await consultarUbicaciones(
+                '/Usuario/Cantones?idProvincia=' +
+                encodeURIComponent(provincia.value)
+            );
+
+            llenar(canton, cantones, idCanton);
+
+            if (canton.value) {
+                await cargarDistritos(canton, distrito, idDistrito);
+            }
+        } catch (error) {
+            avisar('No fue posible cargar los cantones. Intente nuevamente.');
+        }
+    }
+
+    async function cargarDistritos(canton, distrito, idDistrito) {
+        distrito.disabled = true;
+        llenar(distrito, [], null);
+
+        if (!canton.value) {
+            return;
+        }
+
+        try {
+            var distritos = await consultarUbicaciones(
+                '/Usuario/Distritos?idCanton=' +
+                encodeURIComponent(canton.value)
+            );
+
+            llenar(distrito, distritos, idDistrito);
+        } catch (error) {
+            avisar('No fue posible cargar los distritos. Intente nuevamente.');
+        }
+    }
+
     function cascadaDeUbicacion() {
         var provincias = document.querySelectorAll('select[id$="Provincia"]');
 
@@ -346,49 +431,50 @@
             }
 
             provincia.addEventListener('change', function () {
-                if (!window.LenUbicaciones) {
-                    avisar('El cat&aacute;logo de cantones y distritos todav&iacute;a no est&aacute; conectado.');
-                    return;
-                }
-
-                llenar(canton, window.LenUbicaciones.cantones[provincia.value] || []);
-                llenar(distrito, []);
+                cargarCantones(provincia, canton, distrito, null, null);
             });
 
             canton.addEventListener('change', function () {
-                if (!window.LenUbicaciones) {
+                cargarDistritos(canton, distrito, null);
+            });
+        });
+
+        // Al abrir la modal de edicion se recuperan las ubicaciones guardadas
+        var modalEditar = document.getElementById('EditarDireccion');
+
+        if (modalEditar) {
+            modalEditar.addEventListener('show.bs.modal', function (evento) {
+                var disparador = evento.relatedTarget;
+
+                if (!disparador) {
                     return;
                 }
 
-                llenar(distrito, window.LenUbicaciones.distritos[canton.value] || []);
+                var provincia = modalEditar.querySelector('#EditarProvincia');
+                var canton = modalEditar.querySelector('#EditarCanton');
+                var distrito = modalEditar.querySelector('#EditarDistrito');
+
+                if (!provincia || !canton || !distrito) {
+                    return;
+                }
+
+                var idProvincia = disparador.getAttribute('data-provincia');
+                var idCanton = disparador.getAttribute('data-canton');
+                var idDistrito = disparador.getAttribute('data-distrito');
+
+                provincia.value = idProvincia || '';
+
+                cargarCantones(
+                    provincia,
+                    canton,
+                    distrito,
+                    idCanton,
+                    idDistrito
+                );
             });
-        });
-    }
-
-    // El constructor de Option toma texto plano y no interpreta la entidad
-    function opcionVacia(texto) {
-        var opcion = document.createElement('option');
-        opcion.value = '';
-        opcion.innerHTML = texto;
-        return opcion;
-    }
-
-    function llenar(selector, opciones) {
-        selector.innerHTML = '';
-
-        if (opciones.length === 0) {
-            selector.disabled = true;
-            selector.appendChild(opcionVacia('Seleccione una opci&oacute;n'));
-            return;
         }
-
-        selector.disabled = false;
-        selector.appendChild(new Option('Seleccione', ''));
-
-        opciones.forEach(function (opcion) {
-            selector.appendChild(new Option(opcion.nombre, opcion.id));
-        });
     }
+
 
     // ----------------------------------------------------------------
     // 7. Lo que espera endpoint
