@@ -24,28 +24,164 @@ namespace LEN_Web.Controllers
             return View(DatosEjemplo.Tablero());
         }
 
-        public IActionResult Productos(string? busqueda, int? idCategoria, int pagina = 1)
+        public async Task<IActionResult> Productos(
+            string? busqueda,
+            int? idCategoria,
+            int pagina = 1)
         {
-            return View(DatosEjemplo.ProductosAdmin(_entorno, busqueda, idCategoria, pagina));
+            // Preparar los parametros de consulta
+            var parametros = new List<string>
+    {
+        $"pagina={pagina}",
+        $"tamanoPagina={DatosEjemplo.ProductosAdminPorPagina}",
+        "soloActivos=false"
+    };
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+                parametros.Add($"busqueda={Uri.EscapeDataString(busqueda.Trim())}");
+
+            if (idCategoria.HasValue)
+                parametros.Add($"idCategoria={idCategoria.Value}");
+
+            string ruta = "productos?" + string.Join("&", parametros);
+
+            // Consultar productos en la API
+            var resultadoProductos =
+                await _api.Obtener<List<ProductoAdmin>>(ruta);
+
+            if (resultadoProductos.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultadoProductos);
+
+            if (!resultadoProductos.EsExito || resultadoProductos.Datos is null)
+                return this.PaginaError(resultadoProductos);
+
+            // Consultar categorias para el filtro
+            var resultadoCategorias =
+                await _api.Obtener<List<CategoriaAdmin>>("categorias");
+
+            if (resultadoCategorias.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultadoCategorias);
+
+            if (!resultadoCategorias.EsExito || resultadoCategorias.Datos is null)
+                return this.PaginaError(resultadoCategorias);
+
+            // Consultar alertas de bajo inventario
+            var resultadoAlertas =
+                await _api.Obtener<List<AlertaStock>>("productos/bajo-stock");
+
+            if (resultadoAlertas.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultadoAlertas);
+
+            if (!resultadoAlertas.EsExito || resultadoAlertas.Datos is null)
+                return this.PaginaError(resultadoAlertas);
+
+            // Calcular la paginacion
+            var productos = resultadoProductos.Datos;
+            int totalFilas = productos.FirstOrDefault()?.TotalFilas ?? 0;
+
+            int totalPaginas = Math.Max(
+                1,
+                (int)Math.Ceiling(
+                    totalFilas / (double)DatosEjemplo.ProductosAdminPorPagina));
+
+            // Preparar el modelo de la vista
+            var modelo = new ListadoProductosViewModel
+            {
+                Productos = productos,
+
+                Categorias = resultadoCategorias.Datos
+                    .Where(c => c.Activo)
+                    .Select(c => new CategoriaOpcion
+                    {
+                        IdCategoria = c.IdCategoria,
+                        Nombre = c.Nombre
+                    })
+                    .ToList(),
+
+                Busqueda = busqueda,
+                IdCategoria = idCategoria,
+                PaginaActual = pagina,
+                TotalPaginas = totalPaginas,
+
+                AlertasBajoStock = resultadoAlertas.Datos
+            };
+
+            return View(modelo);
         }
 
-        public IActionResult ProductoCrear()
+        public async Task<IActionResult> ProductoCrear()
         {
-            return View(DatosEjemplo.FormularioNuevo());
+            var resultado = await _api.Obtener<List<CategoriaAdmin>>("categorias");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito || resultado.Datos is null)
+                return this.PaginaError(resultado);
+
+            var modelo = new ProductoFormViewModel
+            {
+                EsEdicion = false,
+
+                Categorias = resultado.Datos
+                    .Where(c => c.Activo)
+                    .Select(c => new CategoriaOpcion
+                    {
+                        IdCategoria = c.IdCategoria,
+                        Nombre = c.Nombre
+                    })
+                    .ToList()
+            };
+
+            return View(modelo);
         }
 
-        public IActionResult ProductoEditar(int idProducto)
-        {
-            var formulario = DatosEjemplo.FormularioDe(idProducto);
 
-            if (formulario is null)
+        public async Task<IActionResult> ProductoEditar(int idProducto)
+        {
+            // Consultar los datos reales del producto
+            var resultadoProducto = await _api.Obtener<ProductoFormViewModel>(
+                $"productos/{idProducto}");
+
+            if (resultadoProducto.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultadoProducto);
+
+            if (resultadoProducto.Tipo == TipoResultadoApi.NoEncontrado ||
+                resultadoProducto.Datos is null)
             {
                 TempData["MensajeError"] = "El producto indicado no existe.";
                 return RedirectToAction(nameof(Productos));
             }
 
+            if (!resultadoProducto.EsExito)
+                return this.PaginaError(resultadoProducto);
+
+            // Consultar las categorías disponibles
+            var resultadoCategorias =
+                await _api.Obtener<List<CategoriaAdmin>>("categorias");
+
+            if (resultadoCategorias.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultadoCategorias);
+
+            if (!resultadoCategorias.EsExito || resultadoCategorias.Datos is null)
+                return this.PaginaError(resultadoCategorias);
+
+            var formulario = resultadoProducto.Datos;
+
+            formulario.EsEdicion = true;
+
+            formulario.Categorias = resultadoCategorias.Datos
+                .Where(c => c.Activo)
+                .Select(c => new CategoriaOpcion
+                {
+                    IdCategoria = c.IdCategoria,
+                    Nombre = c.Nombre
+                })
+                .ToList();
+
             return View(formulario);
         }
+
 
         public IActionResult ProductoImagenes(int idProducto)
         {
@@ -60,9 +196,17 @@ namespace LEN_Web.Controllers
             return View(imagenes);
         }
 
-        public IActionResult Categorias()
+        public async Task<IActionResult> Categorias()
         {
-            return View(DatosEjemplo.CategoriasAdmin());
+            var resultado = await _api.Obtener<List<CategoriaAdmin>>("categorias");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (!resultado.EsExito || resultado.Datos is null)
+                return this.PaginaError(resultado);
+
+            return View(resultado.Datos);
         }
 
         public IActionResult Pedidos(

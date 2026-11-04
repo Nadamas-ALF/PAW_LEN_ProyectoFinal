@@ -74,6 +74,12 @@ builder.Services.AddSingleton<IRegistroErrores, RegistroErrores>();
 builder.Services.AddScoped<IDiagnosticoRepositorio, DiagnosticoRepositorio>();
 builder.Services.AddScoped<IDiagnosticoServicio, DiagnosticoServicio>();
 
+builder.Services.AddScoped<ICategoriaRepositorio, CategoriaRepositorio>();
+builder.Services.AddScoped<ICategoriaServicio, CategoriaServicio>();
+
+builder.Services.AddScoped<IProductoRepositorio, ProductoRepositorio>();
+builder.Services.AddScoped<IProductoServicio, ProductoServicio>();
+
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(opciones =>
     {
