@@ -362,11 +362,10 @@ IF NOT EXISTS (
 )
 BEGIN
     CREATE NONCLUSTERED INDEX IX_Producto_Stock_Activo
-    ON dbo.TB_PRODUCTO (Stock)
-    INCLUDE (IdProducto, Nombre, EsPiezaUnica, IdCategoria)
-    WHERE Activo = 1;
+ON dbo.TB_PRODUCTO (Stock)
+INCLUDE (IdProducto, Nombre, EsPiezaUnica, IdCategoria)
+WHERE Activo = 1;
 END;
-GO
 
 
 

@@ -55,7 +55,7 @@ Las colecciones de la seccion 4 estan fijas, no salen de la base
                                     <div class="LenMarcador LenMarcador--Horizontal">
                                         @if (destacado.RutaImagen is not null)
                                         {
-                                            <img src="~/imagenes/@destacado.RutaImagen" alt="@destacado.NombreProducto">
+                                            <img src="~/imagenes/@destacado.RutaImagen" alt="@(destacado.TextoAlternativo ?? destacado.NombreProducto)">
                                         }
                                         else
                                         {

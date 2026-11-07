@@ -27,6 +27,14 @@ public class CategoriasController : ControllerBase
         return Ok(categorias);
     }
 
+    // BT-05. HU-PUB-007. Menu de la tienda y filtro del catalogo: publico
+    [AllowAnonymous]
+    [HttpGet("activas")]
+    public async Task<IActionResult> ListarActivas()
+    {
+        return Ok(await _categoriaServicio.ListarActivas());
+    }
+
 
     [HttpPost]
     public async Task<IActionResult> Registrar(

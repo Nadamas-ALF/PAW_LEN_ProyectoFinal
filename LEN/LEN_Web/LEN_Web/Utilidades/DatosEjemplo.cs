@@ -154,7 +154,7 @@ namespace LEN_Web.Utilidades
                 Imagenes = producto.Archivos
                     .Select(archivo => Imagen(entorno, archivo))
                     .Where(ruta => ruta is not null)
-                    .Select(ruta => ruta!)
+                    .Select(ruta => new ImagenProducto { RutaImagen = ruta })
                     .ToList(),
             };
         }

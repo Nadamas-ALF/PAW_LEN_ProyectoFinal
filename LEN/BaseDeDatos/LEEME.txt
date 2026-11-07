@@ -64,12 +64,14 @@ falta: correrlos dos veces seguidas no falla ni duplica nada.
     01_esquema.sql             obligatorio. Crea BD_LEN y sus 23 tablas
     02_catalogos.sql           obligatorio. Roles, estados, 7 provincias,
                                84 cantones, 494 distritos, 4 metodos de pago
-    03_procedimientos.sql      obligatorio. Los 66 procedimientos
+    03_procedimientos.sql      obligatorio. Los 67 procedimientos
     04_pruebas_integridad.sql  opcional. Comprueba que la base rechaza lo
                                que debe rechazar. No deja nada: todo lo que
                                inserta se revierte al terminar
     05_datos_prueba.sql        opcional, SOLO DESARROLLO. Deja dos usuarios para
-                               poder entrar: un administrador y un cliente.
+                               poder entrar (un administrador y un cliente) y
+                               un catalogo de prueba: categorias, productos,
+                               imagenes y variantes.
                                Las contrasenas estan en el encabezado del
                                archivo. No correrlo en produccion
 
@@ -120,6 +122,9 @@ Como saber que salio bien
     Y la del 05, si se corrio:
 
       05_datos_prueba.sql: listo. Administradores de prueba=1 Clientes de prueba=1
+      Categorias activas=4 Productos activos=14 Imagenes activas=7
+
+    (en una base recien creada; si ya habia datos, los conteos suman esos)
 
 
 5. SI LA VERSION DE SQL SERVER ES ANTERIOR A 2019

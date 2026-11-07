@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using LEN_Web.Utilidades;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,14 +10,11 @@ namespace LEN_Web.Controllers
     // El cliente sobre sus propios datos. No tiene vistas: las pantallas son
     // MiCuenta y EditarCuenta de ClienteController
     //
-    // Los cinco son stubs: vuelven a la pantalla con un aviso de que falta el
-    // API. Ninguno finge haber guardado algo
+    // BT-02: ya conectadas al API. Ninguna manda IdUsuario: el API lo saca del
+    // token, asi que aunque alguien agregue un IdUsuario al formulario no sirve
     [Authorize(Roles = "Cliente")]
     public class CuentaController : Controller
     {
-        private const string Pendiente =
-            "Esta acci&oacute;n todav&iacute;a no est&aacute; conectada: falta el servidor.";
-
         private readonly IClienteApi _api;
 
         public CuentaController(IClienteApi api)
@@ -22,12 +22,36 @@ namespace LEN_Web.Controllers
             _api = api;
         }
 
+        // SP_Usuario_Actualizar por PUT api/usuarios/yo
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ActualizarDatos()
+        public async Task<IActionResult> ActualizarDatos(
+            string? nombre,
+            string? apellido,
+            string? cedula,
+            string? telefono,
+            string? correo)
         {
-            TempData["MensajePendiente"] = Pendiente;
-            return RedirectToAction("EditarCuenta", "Cliente");
+            // el API las repite: esto solo evita un viaje
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(apellido) ||
+                string.IsNullOrWhiteSpace(correo))
+            {
+                TempData["MensajeError"] = "El nombre, el apellido y el correo son obligatorios.";
+                return Volver("datos");
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Put, "usuarios/yo",
+                new { nombre, apellido, cedula, telefono, correo });
+
+            if (resultado.EsExito)
+            {
+                // la cabecera saluda con el nombre de la cookie: sin esto seguiria
+                // diciendo el viejo hasta volver a iniciar sesion
+                await RefrescarSesion(nombre, correo);
+            }
+
+            return await Terminar(resultado, "Sus datos fueron actualizados.", "datos");
         }
 
         [HttpPost]
@@ -45,7 +69,7 @@ namespace LEN_Web.Controllers
             if (error is not null)
             {
                 TempData["MensajeError"] = error;
-                return RedirectToAction("EditarCuenta", "Cliente");
+                return Volver("datos");
             }
 
             var resultado = await _api.Enviar(HttpMethod.Post, "acceso/cambiar-contrasena",
@@ -54,7 +78,7 @@ namespace LEN_Web.Controllers
             if (resultado.Tipo == TipoResultadoApi.Invalido)
             {
                 TempData["MensajeError"] = resultado.MensajeHtml;
-                return RedirectToAction("EditarCuenta", "Cliente");
+                return Volver("datos");
             }
 
             if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
@@ -62,31 +86,157 @@ namespace LEN_Web.Controllers
 
             // la sesion sigue valida: el token no depende de la contrasena
             TempData["MensajeExito"] = "Su contrase&ntilde;a fue actualizada.";
-            return RedirectToAction("EditarCuenta", "Cliente");
+            return Volver("datos");
+        }
+
+        // Provincia y canton no llegan: solo filtran la cascada. Lo unico que se
+        // guarda es IdDistrito
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgregarDireccion(
+            int idDistrito,
+            string? nombreDestinatario,
+            string? direccionExacta,
+            string? referencia,
+            string? telefonoContacto,
+            bool esPrincipal = false)
+        {
+            var error = RevisarDireccion(idDistrito, nombreDestinatario, direccionExacta, telefonoContacto);
+            if (error is not null)
+            {
+                TempData["MensajeError"] = error;
+                return Volver("direcciones");
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Post, "direcciones/mias", new
+            {
+                idDistrito,
+                nombreDestinatario,
+                direccionExacta,
+                referencia,
+                telefonoContacto,
+                esPrincipal
+            });
+
+            return await Terminar(resultado, "Direcci&oacute;n registrada correctamente.", "direcciones");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AgregarDireccion()
+        public async Task<IActionResult> ActualizarDireccion(
+            int idDireccion,
+            int idDistrito,
+            string? nombreDestinatario,
+            string? direccionExacta,
+            string? referencia,
+            string? telefonoContacto,
+            bool esPrincipal = false)
         {
-            TempData["MensajePendiente"] = Pendiente;
-            return RedirectToAction("EditarCuenta", "Cliente");
+            var error = idDireccion <= 0
+                ? "No se indic&oacute; qu&eacute; direcci&oacute;n editar."
+                : RevisarDireccion(idDistrito, nombreDestinatario, direccionExacta, telefonoContacto);
+
+            if (error is not null)
+            {
+                TempData["MensajeError"] = error;
+                return Volver("direcciones");
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Put, $"direcciones/mias/{idDireccion}", new
+            {
+                idDistrito,
+                nombreDestinatario,
+                direccionExacta,
+                referencia,
+                telefonoContacto,
+                esPrincipal
+            });
+
+            return await Terminar(resultado, "Direcci&oacute;n actualizada correctamente.", "direcciones");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ActualizarDireccion()
+        public async Task<IActionResult> DesactivarDireccion(int idDireccion)
         {
-            TempData["MensajePendiente"] = Pendiente;
-            return RedirectToAction("EditarCuenta", "Cliente");
+            var resultado = await _api.Enviar(HttpMethod.Patch, $"direcciones/mias/{idDireccion}/estado", new { });
+
+            return await Terminar(resultado, "Direcci&oacute;n desactivada correctamente.", "direcciones");
         }
 
+        // BT-02. SP_Direccion_MarcarPrincipal
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DesactivarDireccion()
+        public async Task<IActionResult> MarcarPrincipal(int idDireccion)
         {
-            TempData["MensajePendiente"] = Pendiente;
-            return RedirectToAction("EditarCuenta", "Cliente");
+            var resultado = await _api.Enviar(HttpMethod.Patch, $"direcciones/mias/{idDireccion}/principal", new { });
+
+            return await Terminar(resultado, "La direcci&oacute;n qued&oacute; como principal.", "direcciones");
+        }
+
+        // ------------------------------------------------------------
+
+        private static string? RevisarDireccion(int idDistrito, string? destinatario, string? exacta, string? telefono)
+        {
+            if (idDistrito <= 0)
+                return "Seleccione la provincia, el cant&oacute;n y el distrito.";
+
+            if (string.IsNullOrWhiteSpace(destinatario) ||
+                string.IsNullOrWhiteSpace(exacta) ||
+                string.IsNullOrWhiteSpace(telefono))
+                return "El destinatario, la direcci&oacute;n exacta y el tel&eacute;fono son obligatorios.";
+
+            return null;
+        }
+
+        // El mismo cierre para todas: 400 se muestra, 401/403 a SinPermiso, lo
+        // demas a la pagina de error con el codigo de referencia
+        private async Task<IActionResult> Terminar(ResultadoApi resultado, string mensajeExito, string? seccion = null)
+        {
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return Volver(seccion);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.NoEncontrado)
+            {
+                TempData["MensajeError"] = "No se encontr&oacute; el registro indicado.";
+                return Volver(seccion);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito) return this.PaginaError(resultado);
+
+            TempData["MensajeExito"] = mensajeExito;
+            return Volver(seccion);
+        }
+
+        // Cada accion vuelve a la seccion desde donde se llamo: "datos" (datos y
+        // contrasena) o "direcciones". Sin seccion, a la pagina completa
+        private IActionResult Volver(string? seccion = null) =>
+            seccion is null
+                ? RedirectToAction("EditarCuenta", "Cliente")
+                : RedirectToAction("EditarCuenta", "Cliente", new { seccion });
+
+        // Rehace la cookie con el nombre y el correo nuevos. Las propiedades se
+        // reusan tal cual, asi el JWT guardado y el vencimiento no cambian
+        private async Task RefrescarSesion(string nombre, string correo)
+        {
+            var actual = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            if (!actual.Succeeded || actual.Principal is null || actual.Properties is null)
+                return;
+
+            var claims = actual.Principal.Claims
+                .Where(c => c.Type != ClaimTypes.Name && c.Type != ClaimTypes.Email)
+                .Append(new Claim(ClaimTypes.Name, nombre.Trim()))
+                .Append(new Claim(ClaimTypes.Email, correo.Trim().ToLowerInvariant()));
+
+            var identidad = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identidad), actual.Properties);
         }
     }
 }

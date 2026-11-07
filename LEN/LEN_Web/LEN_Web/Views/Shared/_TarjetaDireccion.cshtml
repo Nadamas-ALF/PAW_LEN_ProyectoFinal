@@ -1,8 +1,11 @@
 @*
 Tarjeta de una direccion. Sale en Cliente/EditarCuenta y en Admin/UsuarioDetalle
 La columna la pone la vista: la parcial arma el panel de adentro
-La direccion dada de baja pierde el boton de desactivar, no el de editar: sigue
-pudiendose corregir
+BT-02
+- La dada de baja ya no muestra botones: SP_Direccion_Actualizar solo acepta
+  direcciones activas y Editar terminaba siempre en error
+- Marcar como principal sale solo si la vista pasa RutaMarcarPrincipal, y solo en
+  una activa que todavia no es la principal. Admin/UsuarioDetalle no la pasa
 *@
 @model TarjetaDireccionViewModel
 @{
@@ -12,6 +15,10 @@ pudiendose corregir
     // lista de atributos de una etiqueta. Los valores van escapados
     var atributosDatos = string.Join(" ", Model.Datos
         .Select(dato => $"data-{dato.Key}=\"{Html.Encode(dato.Value ?? string.Empty)}\""));
+
+    var puedeMarcarPrincipal = direccion.Activo
+        && !direccion.EsPrincipal
+        && !string.IsNullOrEmpty(Model.RutaMarcarPrincipal);
 }
 
 <div class="LenPanel h-100">
@@ -44,14 +51,29 @@ pudiendose corregir
         }
     </p>
 
-    <div class="d-flex flex-wrap gap-2 mt-3">
-        <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
-                data-bs-toggle="modal" data-bs-target="@Model.ModalEditar" @Html.Raw(atributosDatos)>
-            Editar
-        </button>
+    @if (direccion.Activo)
+    {
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
+                    data-bs-toggle="modal" data-bs-target="@Model.ModalEditar" @Html.Raw(atributosDatos)>
+                Editar
+            </button>
 
-        @if (direccion.Activo)
-        {
+            @if (puedeMarcarPrincipal)
+            {
+                <form class="@Model.ClaseFormulario" method="post" action="@Model.RutaMarcarPrincipal">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
+                    @if (Model.IdUsuario.HasValue)
+                    {
+                        <input type="hidden" name="IdUsuario" value="@Model.IdUsuario.Value">
+                    }
+                    <button type="submit" class="LenBoton LenBoton--Secundario LenBoton--Pequeno">
+                        Marcar como principal
+                    </button>
+                </form>
+            }
+
             <form class="@Model.ClaseFormulario" method="post" action="@Model.RutaDesactivar"
                   data-confirmar-titulo="Desactivar direcci&oacute;n"
                   data-confirmar-cuerpo="Va a desactivar la direcci&oacute;n de {nombre}."
@@ -65,6 +87,6 @@ pudiendose corregir
                 }
                 <button type="submit" class="@Model.ClaseBotonDesactivar">Desactivar</button>
             </form>
-        }
-    </div>
+        </div>
+    }
 </div>

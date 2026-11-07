@@ -32,7 +32,8 @@ El corazon y el Quitar son formularios POST porque cambian el favorito en la bas
         }
         @if (Model.RutaImagen is not null)
         {
-            <img src="~/imagenes/@Model.RutaImagen" alt="@Model.NombreProducto">
+            @* BT-05. HU-PRD-010: el texto alternativo de la imagen, o el nombre si no tiene *@
+            <img src="~/imagenes/@Model.RutaImagen" alt="@(Model.TextoAlternativo ?? Model.NombreProducto)">
         }
         else
         {

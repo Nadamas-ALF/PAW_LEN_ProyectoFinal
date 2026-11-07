@@ -7,6 +7,9 @@ public interface ICategoriaRepositorio
 {
     Task<List<CategoriaAdminDto>> Listar();
 
+    // BT-05. SP_Categoria_ListarActivas, para el menu y el filtro de la tienda
+    Task<List<CategoriaAdminDto>> ListarActivas();
+
     Task<int> Registrar(int idUsuarioAccion, CategoriaRegistrarDto datos);
 
 

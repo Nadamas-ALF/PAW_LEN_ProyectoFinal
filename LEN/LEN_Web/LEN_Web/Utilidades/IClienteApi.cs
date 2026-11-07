@@ -2,7 +2,8 @@ namespace LEN_Web.Utilidades
 {
     // Unico lugar del Web que habla con el API. Las rutas son relativas a Valores:UrlAPI
     // y van sin barra inicial: "acceso/registro". Nunca lanza por un fallo del API;
-    // lo devuelve como ResultadoApi de tipo Fallo
+    // lo devuelve como ResultadoApi de tipo Fallo.
+    // El cuerpo va como JSON, salvo que sea un HttpContent (multipart para subir archivos)
     public interface IClienteApi
     {
         Task<ResultadoApi<T>> Obtener<T>(string ruta, CancellationToken cancelacion = default);

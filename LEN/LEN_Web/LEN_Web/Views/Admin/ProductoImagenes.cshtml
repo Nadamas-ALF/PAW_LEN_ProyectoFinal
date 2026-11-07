@@ -1,6 +1,8 @@
 @*
 Imagenes del producto. Origen Admin/ProductoImagenes.html. Layout _LayoutAdmin. Solo Administrador
-Datos de ImagenesProductoViewModel mientras no exista SP_ImagenProducto_ListarPorProducto
+Datos de ImagenesProductoViewModel, del API (SP_ImagenProducto_ListarPorProducto). BT-05
+Los archivos se guardan en wwwroot/imagenes/productos. Desactivar es baja logica y el
+archivo se conserva (DEC-006)
 Formulario de subida multipart mas la rejilla de las que ya tiene con sus dos acciones
 Solo una principal por producto, por el indice UX_ImagenProducto_PrincipalProducto
 Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde Editar
@@ -43,7 +45,8 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
             </button>
         </div>
 
-        @* La columna ya existe en TB_IMAGEN_PRODUCTO pero el API todavia no la recibe *@
+        @* HU-PRD-010. Se guarda en TB_IMAGEN_PRODUCTO.TextoAlternativo y la tienda lo
+           usa como alt. Si queda vacio, la tienda usa el nombre del producto *@
         <div class="col-12">
             <label class="LenEtiqueta" for="TextoAlternativo">
                 Descripci&oacute;n de la imagen, para lectores de pantalla
@@ -51,6 +54,7 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
             <input type="text" class="LenCampo" id="TextoAlternativo"
                    name="TextoAlternativo" maxlength="150"
                    placeholder="Ej. collar de mostacilla azul con dije de luna">
+            <span class="LenAyuda">Opcional. Si la deja vac&iacute;a se usa el nombre del producto.</span>
         </div>
     </form>
 </div>
@@ -76,6 +80,10 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
                         }
                     </div>
                     <div class="p-3 d-flex flex-column gap-2">
+                        <span class="LenAyuda mt-0">
+                            @(string.IsNullOrWhiteSpace(imagen.TextoAlternativo) ? "Sin descripción" : imagen.TextoAlternativo)
+                        </span>
+
                         @if (imagen.EsPrincipal)
                         {
                             <span class="LenBadge LenBadge--Exito align-self-start">
@@ -94,15 +102,17 @@ Sin migas, igual que el original: esta pantalla se abre desde la tabla y desde E
                             </form>
                         }
 
+                        @* HU-PRD-009. Baja logica con confirmacion (CA-1 y CA-2). Si era la
+                           principal, el SP promueve otra (CA-3) *@
                         <form method="post" action="/Producto/EliminarImagen"
-                              data-confirmar-titulo="Eliminar imagen"
-                              data-confirmar-cuerpo="Va a eliminar esta imagen del producto. No se puede deshacer."
-                              data-confirmar-boton="Eliminar">
+                              data-confirmar-titulo="Desactivar imagen"
+                              data-confirmar-cuerpo="Va a desactivar esta imagen: deja de mostrarse en la tienda. Si es la principal, otra imagen pasa a serlo."
+                              data-confirmar-boton="Desactivar">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@imagen.IdImagen">
                             <input type="hidden" name="idProducto" value="@Model.IdProducto">
                             <button type="submit" class="LenBoton LenBoton--PeligroContorno LenBoton--Pequeno LenBoton--Bloque">
-                                <i class="bi bi-trash" aria-hidden="true"></i> Eliminar
+                                <i class="bi bi-eye-slash" aria-hidden="true"></i> Desactivar
                             </button>
                         </form>
                     </div>

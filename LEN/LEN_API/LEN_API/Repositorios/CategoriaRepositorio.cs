@@ -22,6 +22,14 @@ public class CategoriaRepositorio : ICategoriaRepositorio
             .ToListAsync();
     }
 
+    public async Task<List<CategoriaAdminDto>> ListarActivas()
+    {
+        return await _contexto.Database
+            .SqlQuery<CategoriaAdminDto>($@"
+                EXEC dbo.SP_Categoria_ListarActivas")
+            .ToListAsync();
+    }
+
 
     public async Task<int> Registrar(
         int idUsuarioAccion,

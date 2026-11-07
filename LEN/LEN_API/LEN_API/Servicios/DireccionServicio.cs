@@ -68,6 +68,17 @@ public class DireccionServicio : IDireccionServicio
             datos);
     }
 
+    public async Task MarcarPrincipal(
+        int idUsuarioAccion,
+        int idDireccion,
+        int idUsuario)
+    {
+        await _repositorio.MarcarPrincipal(
+            idUsuarioAccion,
+            idDireccion,
+            idUsuario);
+    }
+
     public async Task Desactivar(
         int idUsuarioAccion,
         int idDireccion,

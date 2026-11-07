@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LEN_Web.Models
 {
     // Carrito, checkout y confirmacion. Las tres comparten la idea de linea pero
@@ -51,10 +53,16 @@ namespace LEN_Web.Models
 
         public string DireccionExacta { get; set; } = string.Empty;
 
+        // BT-02. Los tres nombres llegan del API como NombreDistrito, NombreCanton y
+        // NombreProvincia (SP_Direccion_ListarPorUsuario). Con esto el JSON se lee
+        // directo a esta clase, sin una clase de contrato aparte
+        [JsonPropertyName("nombreDistrito")]
         public string Distrito { get; set; } = string.Empty;
 
+        [JsonPropertyName("nombreCanton")]
         public string Canton { get; set; } = string.Empty;
 
+        [JsonPropertyName("nombreProvincia")]
         public string Provincia { get; set; } = string.Empty;
 
         public string? TelefonoContacto { get; set; }

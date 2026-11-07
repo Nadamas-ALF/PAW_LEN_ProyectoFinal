@@ -22,4 +22,10 @@ public interface IUsuarioServicio
 
 
     Task CambiarActivo(int idUsuarioAccion, int idUsuario);
+
+    // BT-02. La cuenta del propio cliente, o null si ya no existe
+    Task<UsuarioAdminDto?> ObtenerCuenta(int idUsuario);
+
+    // BT-02. El cliente cambia sus datos personales. Rol y estado no se tocan
+    Task ActualizarCuenta(int idUsuario, ActualizarCuentaDto datos);
 }

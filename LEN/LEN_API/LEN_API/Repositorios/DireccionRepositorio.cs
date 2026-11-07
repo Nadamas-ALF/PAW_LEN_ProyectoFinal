@@ -117,4 +117,16 @@ public class DireccionRepositorio : IDireccionRepositorio
             @IdDireccion = {idDireccion},
             @IdUsuario = {idUsuario}");
     }
+
+    public async Task MarcarPrincipal(
+        int idUsuarioAccion,
+        int idDireccion,
+        int idUsuario)
+    {
+        await _contexto.Database.ExecuteSqlAsync($@"
+        EXEC dbo.SP_Direccion_MarcarPrincipal
+            @IdUsuarioAccion = {idUsuarioAccion},
+            @IdDireccion = {idDireccion},
+            @IdUsuario = {idUsuario}");
+    }
 }

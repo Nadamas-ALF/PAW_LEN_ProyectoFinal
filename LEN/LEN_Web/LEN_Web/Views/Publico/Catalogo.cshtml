@@ -1,6 +1,6 @@
 @*
 Catalogo de la tienda. Layout _LayoutPublico. Publica
-Datos de Model: CatalogoViewModel, ejemplo mientras no exista SP_Catalogo_Listar
+Datos de Model: CatalogoViewModel, del API (SP_Catalogo_Listar). BT-05
 Filtros por GET para poder compartir la busqueda: busqueda idCategoria color pagina
 Cada enlace de pagina arrastra los filtros o se pierden al cambiar de pagina
 El corazon de favoritos lo decide la tarjeta y solo sale con la sesion abierta
@@ -54,7 +54,7 @@ El corazon de favoritos lo decide la tarjeta y solo sale con la sesion abierta
         {
             <div class="col">
                 <partial name="_TarjetaProducto"
-                         model="@TarjetaProductoViewModel.Desde(producto, VarianteTarjeta.Catalogo, nivelTitulo: 2, urlRetorno: urlRetorno)" />
+                         model="@TarjetaProductoViewModel.Desde(producto, VarianteTarjeta.Catalogo, nivelTitulo: 2, esFavorito: producto.EsFavorito, urlRetorno: urlRetorno)" />
             </div>
         }
     </div>

@@ -183,17 +183,37 @@ namespace LEN_Web.Controllers
         }
 
 
-        public IActionResult ProductoImagenes(int idProducto)
+        // BT-05. HU-PRD-007. Las imagenes activas del producto, la principal primero
+        public async Task<IActionResult> ProductoImagenes(int idProducto)
         {
-            var imagenes = DatosEjemplo.ImagenesDe(_entorno, idProducto);
+            var producto = await _api.Obtener<ProductoFormViewModel>($"productos/{idProducto}");
 
-            if (imagenes is null)
+            if (producto.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(producto);
+
+            if (producto.Tipo == TipoResultadoApi.NoEncontrado)
             {
                 TempData["MensajeError"] = "El producto indicado no existe.";
                 return RedirectToAction(nameof(Productos));
             }
 
-            return View(imagenes);
+            if (!producto.EsExito || producto.Datos is null)
+                return this.PaginaError(producto);
+
+            var imagenes = await _api.Obtener<List<ImagenProducto>>($"productos/{idProducto}/imagenes");
+
+            if (imagenes.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(imagenes);
+
+            if (!imagenes.EsExito || imagenes.Datos is null)
+                return this.PaginaError(imagenes);
+
+            return View(new ImagenesProductoViewModel
+            {
+                IdProducto = idProducto,
+                NombreProducto = producto.Datos.NombreProducto ?? string.Empty,
+                Imagenes = imagenes.Datos
+            });
         }
 
         public async Task<IActionResult> Categorias()
