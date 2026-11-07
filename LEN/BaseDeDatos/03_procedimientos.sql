@@ -694,6 +694,14 @@ BEGIN
     IF @NombreDestinatario = N'' OR @DireccionExacta = N'' OR @TelefonoContacto = N''
         THROW 50000, N'El destinatario, la dirección exacta y el teléfono son obligatorios.', 1;
 
+    /* BT-02. La principal no se desmarca desde aqui: el usuario quedaria sin
+       principal y el checkout sin direccion por defecto. Para cambiarla se
+       marca otra (SP_Direccion_MarcarPrincipal o la casilla de otra). */
+    IF @EsPrincipal = 0
+       AND EXISTS (SELECT 1 FROM dbo.TB_DIRECCION_ENVIO
+                   WHERE IdDireccion = @IdDireccion AND EsPrincipal = 1)
+        SET @EsPrincipal = 1;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
@@ -727,6 +735,59 @@ BEGIN
                 NULLIF((SELECT IdDistrito, NombreDestinatario, DireccionExacta, Referencia,
                                TelefonoContacto, EsPrincipal
                         FROM dbo.TB_DIRECCION_ENVIO WHERE IdDireccion = @IdDireccion
+                        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), N''));
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+/* BT-02. Cambia cual es la direccion principal del usuario sin mandar la
+   direccion completa. Mismo patron que SP_ImagenProducto_MarcarPrincipal:
+   primero se le quita la marca a la que la tenia y despues se pone, porque
+   UX_DireccionEnvio_PrincipalUsuario no admite dos principales activas.
+   Pide IdUsuario para que nadie marque una direccion ajena cambiando el Id.
+   Si ya era la principal no hace nada y no deja bitacora.
+   Errores: 50000 si no existe, no es del usuario o esta dada de baja */
+CREATE OR ALTER PROCEDURE dbo.SP_Direccion_MarcarPrincipal
+    @IdUsuarioAccion INT,
+    @IdDireccion     INT,
+    @IdUsuario       INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @EraPrincipal BIT;
+
+    SELECT @EraPrincipal = EsPrincipal
+    FROM dbo.TB_DIRECCION_ENVIO
+    WHERE IdDireccion = @IdDireccion AND IdUsuario = @IdUsuario AND Activo = 1;
+
+    IF @EraPrincipal IS NULL
+        THROW 50000, N'La dirección indicada no existe o está dada de baja.', 1;
+
+    IF @EraPrincipal = 1
+        RETURN;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.TB_DIRECCION_ENVIO
+        SET EsPrincipal = 0
+        WHERE IdUsuario = @IdUsuario AND EsPrincipal = 1;
+
+        UPDATE dbo.TB_DIRECCION_ENVIO
+        SET EsPrincipal = 1
+        WHERE IdDireccion = @IdDireccion AND IdUsuario = @IdUsuario;
+
+        INSERT INTO dbo.TB_BITACORA (IdUsuario, Entidad, IdRegistro, Accion, ValorNuevo)
+        VALUES (@IdUsuarioAccion, N'TB_DIRECCION_ENVIO', @IdDireccion, N'Marcar principal',
+                NULLIF((SELECT @IdUsuario AS IdUsuario, 1 AS EsPrincipal
                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), N''));
 
         COMMIT TRANSACTION;
@@ -806,8 +867,10 @@ GO
    baja no vuelve.
    ============================================================ */
 
-/* Categorias con al menos un producto visible. Alimenta el menu lateral
-   y el campo de seleccion del filtro. */
+/* Categorias activas. Alimenta el menu de la tienda y el campo de
+   seleccion del filtro del catalogo (HU-PUB-007).
+   BT-05: devuelve las mismas columnas que SP_Categoria_Listar, asi el API
+   reusa CategoriaAdminDto. CantidadProductosActivos es lo que ve la tienda. */
 CREATE OR ALTER PROCEDURE dbo.SP_Categoria_ListarActivas
 AS
 BEGIN
@@ -817,12 +880,18 @@ BEGIN
         C.IdCategoria,
         C.Nombre,
         C.Descripcion,
+        C.Activo,
+        (
+            SELECT COUNT(*)
+            FROM dbo.TB_PRODUCTO AS P
+            WHERE P.IdCategoria = C.IdCategoria
+        ) AS CantidadProductos,
         (
             SELECT COUNT(*)
             FROM dbo.TB_PRODUCTO AS P
             WHERE P.IdCategoria = C.IdCategoria
               AND P.Activo = 1
-        ) AS CantidadProductos
+        ) AS CantidadProductosActivos
     FROM dbo.TB_CATEGORIA AS C
     WHERE C.Activo = 1
     ORDER BY C.Nombre;
@@ -873,13 +942,8 @@ BEGIN
         P.IdCategoria,
         C.Nombre AS NombreCategoria,
         CASE WHEN P.Stock > 0 THEN N'Disponible' ELSE N'Agotado' END AS NombreEstado,
-        (
-            SELECT TOP (1) I.RutaImagen
-            FROM dbo.TB_IMAGEN_PRODUCTO AS I
-            WHERE I.IdProducto = P.IdProducto
-              AND I.Activo = 1
-            ORDER BY I.EsPrincipal DESC, I.IdImagen
-        ) AS RutaImagen,
+        IMG.RutaImagen,
+        IMG.TextoAlternativo,
         CASE
             WHEN @IdUsuarioActual IS NULL THEN CAST(0 AS BIT)
             WHEN EXISTS (SELECT 1 FROM dbo.TB_FAVORITO AS F
@@ -891,6 +955,15 @@ BEGIN
     FROM dbo.TB_PRODUCTO AS P
     INNER JOIN dbo.TB_CATEGORIA AS C
         ON C.IdCategoria = P.IdCategoria
+    /* BT-05. La imagen principal con su texto alternativo (HU-PRD-010) */
+    OUTER APPLY
+    (
+        SELECT TOP (1) I.RutaImagen, I.TextoAlternativo
+        FROM dbo.TB_IMAGEN_PRODUCTO AS I
+        WHERE I.IdProducto = P.IdProducto
+          AND I.Activo = 1
+        ORDER BY I.EsPrincipal DESC, I.IdImagen
+    ) AS IMG
     WHERE P.Activo = 1
       AND (@Busqueda IS NULL OR P.Nombre LIKE N'%' + @Busqueda + N'%')
       AND (@IdCategoria IS NULL OR P.IdCategoria = @IdCategoria)
@@ -983,7 +1056,10 @@ END;
 GO
 
 /* Destacados de la portada. Solo con stock: mostrar un destacado
-   agotado en la primera pantalla es la peor vitrina posible. */
+   agotado en la primera pantalla es la peor vitrina posible.
+   BT-05: devuelve las mismas columnas que SP_Catalogo_Listar, asi la
+   portada y el catalogo se leen con el mismo DTO (ProductoCatalogoDto).
+   Sin destacados devuelve cero filas y la portada oculta la seccion. */
 CREATE OR ALTER PROCEDURE dbo.SP_Producto_ListarDestacados
     @Cantidad INT = 4
 AS
@@ -996,18 +1072,27 @@ BEGIN
         P.IdProducto,
         P.Nombre AS NombreProducto,
         P.Precio,
+        P.Stock,
+        P.EsPiezaUnica,
+        P.Destacado,
         P.IdCategoria,
         C.Nombre AS NombreCategoria,
-        (
-            SELECT TOP (1) I.RutaImagen
-            FROM dbo.TB_IMAGEN_PRODUCTO AS I
-            WHERE I.IdProducto = P.IdProducto
-              AND I.Activo = 1
-            ORDER BY I.EsPrincipal DESC, I.IdImagen
-        ) AS RutaImagen
+        CASE WHEN P.Stock > 0 THEN N'Disponible' ELSE N'Agotado' END AS NombreEstado,
+        IMG.RutaImagen,
+        IMG.TextoAlternativo,
+        CAST(0 AS BIT) AS EsFavorito,
+        COUNT(*) OVER () AS TotalFilas
     FROM dbo.TB_PRODUCTO AS P
     INNER JOIN dbo.TB_CATEGORIA AS C
         ON C.IdCategoria = P.IdCategoria
+    OUTER APPLY
+    (
+        SELECT TOP (1) I.RutaImagen, I.TextoAlternativo
+        FROM dbo.TB_IMAGEN_PRODUCTO AS I
+        WHERE I.IdProducto = P.IdProducto
+          AND I.Activo = 1
+        ORDER BY I.EsPrincipal DESC, I.IdImagen
+    ) AS IMG
     WHERE P.Destacado = 1
       AND P.Activo = 1
       AND P.Stock > 0
@@ -2318,7 +2403,11 @@ BEGIN
         THROW;
     END CATCH;
 
-    SELECT @IdImagen AS IdImagen, @EsPrincipal AS EsPrincipal;
+    /* BT-05. La fila creada completa, con las mismas columnas que
+       SP_ImagenProducto_ListarPorProducto: el API la lee con ImagenProductoDto */
+    SELECT IdImagen, IdProducto, RutaImagen, TextoAlternativo, EsPrincipal
+    FROM dbo.TB_IMAGEN_PRODUCTO
+    WHERE IdImagen = @IdImagen;
 END;
 GO
 

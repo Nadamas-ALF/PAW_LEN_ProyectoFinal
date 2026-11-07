@@ -87,7 +87,10 @@ namespace LEN_Web.Utilidades
             try
             {
                 using var peticion = new HttpRequestMessage(metodo, ruta);
-                if (cuerpo is not null) peticion.Content = JsonContent.Create(cuerpo, options: OpcionesJson);
+                // BT-05. Un HttpContent (por ejemplo MultipartFormDataContent con una
+                // imagen) se manda tal cual; cualquier otro cuerpo va como JSON
+                if (cuerpo is HttpContent contenido) peticion.Content = contenido;
+                else if (cuerpo is not null) peticion.Content = JsonContent.Create(cuerpo, options: OpcionesJson);
 
                 var token = await ObtenerToken();
                 if (token is not null) peticion.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

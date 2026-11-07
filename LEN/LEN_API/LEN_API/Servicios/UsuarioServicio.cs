@@ -141,4 +141,53 @@ public class UsuarioServicio : IUsuarioServicio
     {
         await _repositorio.CambiarActivo(idUsuarioAccion, idUsuario);
     }
+
+    // BT-02. Lee con el mismo ObtenerPorId de EF que usa el inicio de sesion
+    public async Task<UsuarioAdminDto?> ObtenerCuenta(int idUsuario)
+    {
+        var usuario = await _repositorio.ObtenerPorId(idUsuario);
+
+        if (usuario is null)
+            return null;
+
+        return new UsuarioAdminDto
+        {
+            IdUsuario = usuario.IdUsuario,
+            Nombre = usuario.Nombre,
+            Apellido = usuario.Apellido,
+            Cedula = usuario.Cedula,
+            Telefono = usuario.Telefono,
+            Correo = usuario.Correo,
+            IdRol = usuario.IdRol,
+            NombreRol = usuario.IdRolNavigation.Nombre,
+            Activo = usuario.Activo,
+            FechaRegistro = usuario.FechaRegistro
+        };
+    }
+
+    // BT-02. Reusa SP_Usuario_Actualizar en vez de crear uno paralelo.
+    // Rol y estado se toman de la base y nunca del cuerpo: asi el cliente
+    // no se puede cambiar el rol ni reactivarse a si mismo
+    public async Task ActualizarCuenta(int idUsuario, ActualizarCuentaDto datos)
+    {
+        var actual = await _repositorio.ObtenerPorId(idUsuario);
+
+        if (actual is not { Activo: true })
+            throw new ExcepcionNegocio("La cuenta no existe o está inactiva.");
+
+        // el que hace el cambio es el mismo cliente: asi queda en la bitacora
+        await _repositorio.ActualizarDesdeAdministracion(
+            idUsuario,
+            idUsuario,
+            new ActualizarUsuarioAdminDto
+            {
+                Nombre = datos.Nombre.Trim(),
+                Apellido = datos.Apellido.Trim(),
+                Cedula = string.IsNullOrWhiteSpace(datos.Cedula) ? null : datos.Cedula.Trim(),
+                Telefono = string.IsNullOrWhiteSpace(datos.Telefono) ? null : datos.Telefono.Trim(),
+                Correo = datos.Correo.Trim().ToLower(),
+                IdRol = actual.IdRol,
+                Activo = actual.Activo
+            });
+    }
 }

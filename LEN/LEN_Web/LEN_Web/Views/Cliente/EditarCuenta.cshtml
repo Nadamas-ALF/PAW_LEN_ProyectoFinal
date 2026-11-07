@@ -1,20 +1,36 @@
 @*
 Editar la cuenta. Origen Cliente/EditarCuenta.html. Layout _LayoutPublico. Pide sesion
-Tres formularios en la pagina y uno por direccion en modales: cada uno llama a su
-procedimiento, por eso estan separados. Datos de EditarCuentaViewModel
+Tres formularios en la pagina y dos modales (agregar y editar): cada uno llama a su
+procedimiento, por eso estan separados. Datos de EditarCuentaViewModel, del API (BT-02)
 Los campos van con name explicito y no con asp-for: el modelo de la pantalla no es el
 del formulario y asp-for los nombraria Usuario.Nombre, que rompe el contrato
 Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistrito
 *@
 @model EditarCuentaViewModel
 @{
-    ViewData["Titulo"] = "Editar mi cuenta";
+    // BT-02. ?seccion=direcciones viene del boton Administrar de MiCuenta
+    ViewData["Titulo"] = Model.SoloDirecciones ? "Mis direcciones"
+                       : Model.SoloDatos ? "Mis datos"
+                       : "Editar mi cuenta";
 }
 
 <div class="LenEncabezado">
     <div>
-        <h1 class="LenEncabezado-Titulo">Editar mi cuenta</h1>
-        <p class="LenEncabezado-Texto">Actualice sus datos, su contrase&ntilde;a y sus direcciones.</p>
+        <h1 class="LenEncabezado-Titulo">@ViewData["Titulo"]</h1>
+        <p class="LenEncabezado-Texto">
+            @if (Model.SoloDirecciones)
+            {
+                @:Agregue, edite o desactive sus direcciones de env&iacute;o.
+            }
+            else if (Model.SoloDatos)
+            {
+                @:Actualice sus datos personales y su contrase&ntilde;a.
+            }
+            else
+            {
+                @:Actualice sus datos, su contrase&ntilde;a y sus direcciones.
+            }
+        </p>
     </div>
     <div class="LenEncabezado-Acciones">
         <a class="LenBoton LenBoton--Secundario" asp-controller="Cliente" asp-action="MiCuenta">Volver a mi cuenta</a>
@@ -27,6 +43,8 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
 
 <div class="row g-4 g-lg-5">
 
+    @if (!Model.SoloDirecciones)
+    {
     <div class="col-lg-6">
         <section class="LenBloque">
             <h2 class="LenBloque-Titulo">Mis datos</h2>
@@ -108,8 +126,11 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
             </form>
         </section>
     </div>
+    }
 
 
+    @if (!Model.SoloDatos)
+    {
     <div class="col-12">
         <section class="LenBloque">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -125,14 +146,26 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
                 <div class="row g-3">
                     @foreach (var direccion in Model.Direcciones)
                     {
-                        @* La tarjeta la comparte con Admin/UsuarioDetalle. Aca hay
-                           una modal por direccion, asi que el objetivo lleva el Id
-                           y no hacen falta los data- *@
+                        @* La tarjeta la comparte con Admin/UsuarioDetalle. La modal
+                           de editar es una sola, asi que la tarjeta lleva los data-
+                           que len.js copia. No se manda IdUsuario: sale del token *@
                         <div class="col-md-6">
                             <partial name="_TarjetaDireccion" model="@(new TarjetaDireccionViewModel {
                                 Direccion = direccion,
                                 RutaDesactivar = "/Cuenta/DesactivarDireccion",
-                                ModalEditar = $"#EditarDireccion{direccion.IdDireccion}" })" />
+                                RutaMarcarPrincipal = "/Cuenta/MarcarPrincipal",
+                                ModalEditar = "#EditarDireccion",
+                                Datos = new Dictionary<string, string?> {
+                                    ["id"] = direccion.IdDireccion.ToString(),
+                                    ["destinatario"] = direccion.NombreDestinatario,
+                                    ["telefono"] = direccion.TelefonoContacto,
+                                    ["exacta"] = direccion.DireccionExacta,
+                                    ["referencia"] = direccion.Referencia,
+                                    ["provincia"] = direccion.IdProvincia.ToString(),
+                                    ["canton"] = direccion.IdCanton.ToString(),
+                                    ["distrito"] = direccion.IdDistrito.ToString(),
+                                    ["principal"] = direccion.EsPrincipal.ToString().ToLowerInvariant(),
+                                } })" />
                         </div>
                     }
                 </div>
@@ -146,9 +179,13 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
             }
         </section>
     </div>
+    }
 </div>
 
 
+@* Las modales de direcciones no hacen falta en la vista de solo datos *@
+@if (!Model.SoloDatos)
+{
 <div class="modal fade LenModal" id="AgregarDireccion" tabindex="-1" aria-labelledby="TituloAgregarDireccion" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -217,82 +254,71 @@ Provincia y canton no se envian. Lo unico que se guarda de la cascada es IdDistr
 </div>
 
 
-@* Una modal por direccion, con el Id pegado al identificador. Con muchas
-   direcciones repite HTML: conviene una sola que cargue los datos, y eso pide
-   JavaScript, asi que queda para la fase que lo escriba *@
-@foreach (var direccion in Model.Direcciones)
-{
-    var sufijo = direccion.IdDireccion.ToString();
+@* BT-02. Una sola modal de editar compartida, igual que Admin/UsuarioDetalle. El
+   boton de cada tarjeta trae la direccion en data- y len.js (MODALES y la cascada)
+   copia los campos y rehace provincia, canton y distrito con los ids guardados *@
+<div class="modal fade LenModal" id="EditarDireccion" tabindex="-1" aria-labelledby="TituloEditarDireccion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="/Cuenta/ActualizarDireccion">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdDireccion" value="">
 
-    <div class="modal fade LenModal" id="EditarDireccion@(sufijo)" tabindex="-1"
-         aria-labelledby="TituloEditarDireccion@(sufijo)" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <form method="post" action="/Cuenta/ActualizarDireccion">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="IdDireccion" value="@direccion.IdDireccion">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="TituloEditarDireccion">Editar direcci&oacute;n</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
 
-                    <div class="modal-header">
-                        <h2 class="modal-title" id="TituloEditarDireccion@(sufijo)">Editar direcci&oacute;n</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarDestinatario">Nombre del destinatario</label>
+                            <input type="text" class="LenCampo" id="EditarDestinatario"
+                                   name="NombreDestinatario" maxlength="150" required>
+                        </div>
 
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="LenEtiqueta" for="EditarDestinatario@(sufijo)">Nombre del destinatario</label>
-                                <input type="text" class="LenCampo" id="EditarDestinatario@(sufijo)"
-                                       name="NombreDestinatario" value="@direccion.NombreDestinatario"
-                                       maxlength="150" required>
+                        <div class="col-md-6">
+                            <label class="LenEtiqueta" for="EditarTelefono">Tel&eacute;fono de contacto</label>
+                            <input type="tel" class="LenCampo" id="EditarTelefono"
+                                   name="TelefonoContacto" maxlength="20" required>
+                        </div>
+
+                        @* Nace sin cantones ni distritos: len.js los pide al abrir la modal *@
+                        <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
+                            Prefijo = "Editar",
+                            Provincias = Model.Provincias })" />
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="EditarDireccionExacta">Direcci&oacute;n exacta</label>
+                            <textarea class="LenCampo" id="EditarDireccionExacta" name="DireccionExacta"
+                                      rows="3" maxlength="300" required></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="LenEtiqueta" for="EditarReferencia">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
+                            <textarea class="LenCampo" id="EditarReferencia" name="Referencia"
+                                      rows="2" maxlength="300"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="LenOpcion mb-0">
+                                <input type="checkbox" id="EditarEsPrincipal" name="EsPrincipal" value="true">
+                                <input type="hidden" name="EsPrincipal" value="false">
+                                <label for="EditarEsPrincipal">Establecer como direcci&oacute;n principal</label>
                             </div>
-
-                            <div class="col-md-6">
-                                <label class="LenEtiqueta" for="EditarTelefono@(sufijo)">Tel&eacute;fono de contacto</label>
-                                <input type="tel" class="LenCampo" id="EditarTelefono@(sufijo)"
-                                       name="TelefonoContacto" value="@direccion.TelefonoContacto"
-                                       maxlength="20" required>
-                            </div>
-
-                            @* Al editar la cascada llega resuelta y los tres habilitados *@
-                            <partial name="_SelectoresUbicacion" model="@(new SelectoresUbicacionViewModel {
-                                Prefijo = "Editar",
-                                Sufijo = sufijo,
-                                Provincias = Model.Provincias,
-                                Cantones = DatosEjemplo.CantonesDeEjemplo(),
-                                Distritos = DatosEjemplo.DistritosDeEjemplo(),
-                                IdProvincia = direccion.IdProvincia,
-                                IdCanton = direccion.IdCanton,
-                                IdDistrito = direccion.IdDistrito })" />
-
-                            <div class="col-12">
-                                <label class="LenEtiqueta" for="EditarDireccionExacta@(sufijo)">Direcci&oacute;n exacta</label>
-                                <textarea class="LenCampo" id="EditarDireccionExacta@(sufijo)" name="DireccionExacta"
-                                          rows="3" maxlength="300" required>@direccion.DireccionExacta</textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="LenEtiqueta" for="EditarReferencia@(sufijo)">Referencia <span class="LenEtiqueta-Opcional">(opcional)</span></label>
-                                <textarea class="LenCampo" id="EditarReferencia@(sufijo)" name="Referencia"
-                                          rows="2" maxlength="300">@direccion.Referencia</textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <div class="LenOpcion mb-0">
-                                    <input type="checkbox" id="EditarEsPrincipal@(sufijo)" name="EsPrincipal"
-                                           value="true" checked="@direccion.EsPrincipal">
-                                    <input type="hidden" name="EsPrincipal" value="false">
-                                    <label for="EditarEsPrincipal@(sufijo)">Establecer como direcci&oacute;n principal</label>
-                                </div>
-                            </div>
+                            <span class="LenAyuda">
+                                Para dejar de usar la principal, marque otra como principal.
+                            </span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
-                    </div>
-                </form>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="LenBoton LenBoton--Secundario" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="LenBoton LenBoton--Principal">Guardar cambios</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 }

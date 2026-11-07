@@ -13,8 +13,12 @@ namespace LEN_Web.Models
         public string NombreCategoria { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public string? RutaImagen { get; set; }
+
+        // BT-05. HU-PRD-010: si viene vacio la vista usa el nombre del producto
+        public string? TextoAlternativo { get; set; }
     }
 
+    // BT-05: el JSON de api/productos/catalogo se lee directo a esta clase
     public class ProductoResumen
     {
         public int IdProducto { get; set; }
@@ -23,5 +27,13 @@ namespace LEN_Web.Models
         public decimal Precio { get; set; }
         public bool Disponible { get; set; }
         public string? RutaImagen { get; set; }
+
+        // BT-05. Lo que agrega el API. Disponible lo calcula el controlador de Stock
+        public int Stock { get; set; }
+        public string? TextoAlternativo { get; set; }
+        public bool EsFavorito { get; set; }
+
+        // El mismo en todas las filas: el total sin paginar, para TotalPaginas
+        public int TotalFilas { get; set; }
     }
 }

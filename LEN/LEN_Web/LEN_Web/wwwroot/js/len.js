@@ -348,6 +348,14 @@
         return opcion;
     }
 
+    // BT-02. Vacio y deshabilitado, con un texto que dice que nivel falta
+    // elegir (CA-3). Va con textContent, por eso el acento como \u00f3
+    function reiniciar(selector, texto) {
+        selector.innerHTML = '';
+        selector.appendChild(opcionVacia(texto));
+        selector.disabled = true;
+    }
+
     function llenar(selector, opciones, valorSeleccionado) {
         selector.innerHTML = '';
 
@@ -372,11 +380,8 @@
     }
 
     async function cargarCantones(provincia, canton, distrito, idCanton, idDistrito) {
-        canton.disabled = true;
-        distrito.disabled = true;
-
-        llenar(canton, [], null);
-        llenar(distrito, [], null);
+        reiniciar(canton, 'Seleccione una provincia primero');
+        reiniciar(distrito, 'Seleccione un cant\u00f3n primero');
 
         if (!provincia.value) {
             return;
@@ -399,8 +404,7 @@
     }
 
     async function cargarDistritos(canton, distrito, idDistrito) {
-        distrito.disabled = true;
-        llenar(distrito, [], null);
+        reiniciar(distrito, 'Seleccione un cant\u00f3n primero');
 
         if (!canton.value) {
             return;
@@ -608,6 +612,41 @@
     }
 
     // ----------------------------------------------------------------
+    // 8. Galeria del detalle de producto (BT-05)
+    // ----------------------------------------------------------------
+
+    // HU-PUB-005 CA-5. La miniatura elegida pasa a la imagen grande, con su
+    // texto alternativo. Con una sola imagen la vista no pinta miniaturas
+    // (CA-6) y esto no hace nada
+    function galeriaDeProducto() {
+        var galeria = document.querySelector('.LenGaleria');
+
+        if (!galeria) {
+            return;
+        }
+
+        var principal = galeria.querySelector('.LenGaleria-Principal img');
+        var miniaturas = galeria.querySelectorAll('.LenGaleria-Miniatura');
+
+        if (!principal || miniaturas.length === 0) {
+            return;
+        }
+
+        Array.prototype.forEach.call(miniaturas, function (miniatura) {
+            miniatura.addEventListener('click', function () {
+                principal.src = miniatura.getAttribute('data-src');
+                principal.alt = miniatura.getAttribute('data-alt') || '';
+
+                Array.prototype.forEach.call(miniaturas, function (otra) {
+                    otra.removeAttribute('aria-current');
+                });
+
+                miniatura.setAttribute('aria-current', 'true');
+            });
+        });
+    }
+
+    // ----------------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', function () {
         contrasenasVisibles();
@@ -618,5 +657,6 @@
         cascadaDeUbicacion();
         accionesSinServidor();
         confirmarAcciones();
+        galeriaDeProducto();
     });
 })();

@@ -10,19 +10,43 @@ namespace LEN_Web.Controllers
     public class HomeController : Controller
     {
         private readonly IWebHostEnvironment _entorno;
+        private readonly IClienteApi _api;
 
-        public HomeController(IWebHostEnvironment entorno)
+        // HU-PUB-001 CA-3. Cuantos productos lleva la seleccion inicial
+        private const int ProductosEnPortada = 8;
+
+        public HomeController(IWebHostEnvironment entorno, IClienteApi api)
         {
             _entorno = entorno;
+            _api = api;
         }
 
-        public IActionResult Index()
+        // BT-05. HU-PUB-001. Publica (CA-1). Las tres imagenes de marca son fijas
+        // del sitio y siguen saliendo de wwwroot/imagenes
+        public async Task<IActionResult> Index()
         {
             ViewData["ImagenMarca"] = DatosEjemplo.Imagen(_entorno, "marca-hero.jpeg");
             ViewData["ImagenColeccionCharms"] = DatosEjemplo.Imagen(_entorno, "coleccion-charms.jpeg");
             ViewData["ImagenColeccionLen"] = DatosEjemplo.Imagen(_entorno, "coleccion-len.jpeg");
 
-            return View(DatosEjemplo.Portada(_entorno));
+            var seleccion = await _api.Obtener<List<ProductoResumen>>(
+                $"productos/catalogo?pagina=1&tamanoPagina={ProductosEnPortada}");
+
+            if (!seleccion.EsExito || seleccion.Datos is null)
+                return this.PaginaError(seleccion);
+
+            foreach (var producto in seleccion.Datos)
+                producto.Disponible = producto.Stock > 0;
+
+            // CA-4. Sin destacados, o si esa consulta falla, la seccion no se
+            // pinta y el resto de la portada sigue funcionando
+            var destacados = await _api.Obtener<List<ProductoDestacado>>("productos/destacados?cantidad=4");
+
+            return View(new PortadaViewModel
+            {
+                Destacados = destacados.EsExito && destacados.Datos is not null ? destacados.Datos : new(),
+                Productos = seleccion.Datos
+            });
         }
 
         // Lo llama UseStatusCodePagesWithReExecute con el codigo que ya traia la respuesta.

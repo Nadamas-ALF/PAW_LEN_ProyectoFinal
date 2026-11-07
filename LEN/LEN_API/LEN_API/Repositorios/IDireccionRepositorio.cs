@@ -32,4 +32,10 @@ public interface IDireccionRepositorio
         int idUsuarioAccion,
         int idDireccion,
         int idUsuario);
+
+    // BT-02. SP_Direccion_MarcarPrincipal
+    Task MarcarPrincipal(
+        int idUsuarioAccion,
+        int idDireccion,
+        int idUsuario);
 }

@@ -48,5 +48,13 @@ namespace LEN_Web.Models
         public List<DireccionEnvio> Direcciones { get; set; } = new();
 
         public List<OpcionUbicacion> Provincias { get; set; } = new();
+
+        // BT-02. Con ?seccion=direcciones (boton Administrar de MiCuenta) la
+        // pantalla muestra solo las direcciones, sin datos ni contrasena
+        public bool SoloDirecciones { get; set; }
+
+        // BT-02. Con ?seccion=datos (boton Editar de MiCuenta) solo se muestran
+        // los datos personales y el cambio de contrasena
+        public bool SoloDatos { get; set; }
     }
 }

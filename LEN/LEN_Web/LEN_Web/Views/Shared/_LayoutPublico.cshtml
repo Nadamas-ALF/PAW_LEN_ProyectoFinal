@@ -2,10 +2,11 @@
 Layout de la tienda. Lo usan Publico y Acceso por ahora
 Cabecera y pie van una sola vez aqui. El titulo lo pone cada vista en ViewData["Titulo"]
 Sesion carrito y categorias son datos de ejemplo, todavia no hay login ni catalogo reales
+BT-05: las categorias del menu ya salen del API (categorias/activas, HU-PUB-007)
 Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
 *@
+@inject IClienteApi Api
 @{
-    var categoriasMenu = DatosEjemplo.CategoriasMenu;
     var cantidadCarrito = 0;
 }
 <!DOCTYPE html>
@@ -75,10 +76,23 @@ Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
                             <li><a asp-controller="Home" asp-action="Index">Inicio</a></li>
                             <li><a href="/Publico/Catalogo">Cat&aacute;logo</a></li>
 
-                            @foreach (var categoria in categoriasMenu)
-                            {
-                                <li><a href="/Publico/Catalogo?idCategoria=@categoria.IdCategoria">@categoria.Nombre</a></li>
-                            }
+                            @* BT-05. HU-PUB-007. Solo categorias activas (CA-1 y CA-4), tantas
+                               como haya (CA-2), y cada una abre el catalogo filtrado (CA-3).
+                               El layout sale en todas las paginas: <cache> guarda el menu un
+                               minuto para no consultar el API en cada una. Si el API falla,
+                               el menu queda solo con Inicio y Catalogo *@
+                            <cache expires-after="@TimeSpan.FromMinutes(1)">
+                                @{
+                                    var categoriasMenu = await Api.Obtener<List<CategoriaAdmin>>("categorias/activas");
+                                }
+                                @if (categoriasMenu.EsExito && categoriasMenu.Datos is not null)
+                                {
+                                    @foreach (var categoria in categoriasMenu.Datos)
+                                    {
+                                        <li><a href="/Publico/Catalogo?idCategoria=@categoria.IdCategoria">@categoria.Nombre</a></li>
+                                    }
+                                }
+                            </cache>
                         </ul>
                     </nav>
                 </div>

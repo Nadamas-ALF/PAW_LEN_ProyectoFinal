@@ -26,9 +26,15 @@ namespace LEN_Web.Controllers
 
 
 
+        // BT-02. La cascada es la misma para el cliente y el administrador (CA-5),
+        // pero la clase pide Administrador. AllowAnonymous quita esa exigencia solo
+        // en estas tres y la sesion se revisa a mano: sin sesion no hay token para el API
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Provincias()
         {
+            if (User.Identity?.IsAuthenticated != true) return Unauthorized();
+
             var resultado = await _api.Obtener<List<ProvinciaApi>>(
                 "direcciones/provincias");
 
@@ -45,9 +51,13 @@ namespace LEN_Web.Controllers
             }));
         }
 
+        // BT-02. CA-1: solo los cantones de la provincia elegida
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Cantones(int idProvincia)
         {
+            if (User.Identity?.IsAuthenticated != true) return Unauthorized();
+
             var resultado = await _api.Obtener<List<CantonApi>>(
                 $"direcciones/cantones/{idProvincia}");
 
@@ -64,9 +74,13 @@ namespace LEN_Web.Controllers
             }));
         }
 
+        // BT-02. CA-2 y CA-4: solo los distritos del canton elegido, nunca los 494
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Distritos(int idCanton)
         {
+            if (User.Identity?.IsAuthenticated != true) return Unauthorized();
+
             var resultado = await _api.Obtener<List<DistritoApi>>(
                 $"direcciones/distritos/{idCanton}");
 

@@ -18,6 +18,11 @@ public class CategoriaServicio : ICategoriaServicio
         return await _categoriaRepositorio.Listar();
     }
 
+    public async Task<List<CategoriaAdminDto>> ListarActivas()
+    {
+        return await _categoriaRepositorio.ListarActivas();
+    }
+
 
     public async Task<int> Registrar(
         int idUsuarioAccion,

@@ -1,6 +1,7 @@
 @*
 Detalle de producto. Layout _LayoutPublico. Publica
-Datos de Model: ProductoDetalleViewModel, ejemplo mientras no exista SP_Producto_ObtenerDetalle
+Datos de Model: ProductoDetalleViewModel, del API (SP_Producto_ObtenerDetalle y SP_Catalogo_ListarImagenes). BT-05
+Cada imagen usa su TextoAlternativo, o el nombre del producto si no tiene (HU-PRD-010)
 Disponible o Agotado se calcula del stock, no es una columna de la base
 El boton de agregar nace deshabilitado si esta agotado y el maximo de cantidad es el stock
 El boton de favoritos solo sale con la sesion abierta
@@ -38,7 +39,7 @@ El boton de favoritos solo sale con la sesion abierta
             <button type="button" class="LenGaleria-Principal" aria-label="Ver la imagen completa">
                 @if (Model.Imagenes.Any())
                 {
-                    <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[0]" alt="@Model.NombreProducto"></span>
+                    <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[0].RutaImagen" alt="@(Model.Imagenes[0].TextoAlternativo ?? Model.NombreProducto)"></span>
                 }
                 else
                 {
@@ -55,8 +56,9 @@ El boton de favoritos solo sale con la sesion abierta
                             <button type="button" class="LenGaleria-Miniatura"
                                     aria-label="Ver imagen @(i + 1)"
                                     aria-current="@(i == 0 ? "true" : null)"
-                                    data-src="@Url.Content($"~/imagenes/{Model.Imagenes[i]}")">
-                                <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[i]" alt=""></span>
+                                    data-src="@Url.Content($"~/imagenes/{Model.Imagenes[i].RutaImagen}")"
+                                    data-alt="@(Model.Imagenes[i].TextoAlternativo ?? Model.NombreProducto)">
+                                <span class="LenMarcador"><img src="~/imagenes/@Model.Imagenes[i].RutaImagen" alt=""></span>
                             </button>
                         </li>
                     }

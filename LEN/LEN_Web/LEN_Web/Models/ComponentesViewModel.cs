@@ -107,6 +107,10 @@ namespace LEN_Web.Models
 
         public string RutaDesactivar { get; set; } = string.Empty;
 
+        // BT-02. Si viene vacia no se pinta el boton de marcar como principal.
+        // Cliente/EditarCuenta la pasa; Admin/UsuarioDetalle todavia no
+        public string RutaMarcarPrincipal { get; set; } = string.Empty;
+
         // Solo el panel lo manda: el cliente actua sobre sus propias direcciones
         // y el IdUsuario sale del token de la sesion
         public int? IdUsuario { get; set; }
@@ -274,6 +278,9 @@ namespace LEN_Web.Models
 
         public string? RutaImagen { get; set; }
 
+        // BT-05. HU-PRD-010. Sin texto, la tarjeta usa el nombre del producto
+        public string? TextoAlternativo { get; set; }
+
         public bool Disponible { get; set; }
 
         public bool EsFavorito { get; set; }
@@ -298,6 +305,7 @@ namespace LEN_Web.Models
                 NombreCategoria = producto.NombreCategoria,
                 Precio = producto.Precio,
                 RutaImagen = producto.RutaImagen,
+                TextoAlternativo = producto.TextoAlternativo,
                 Disponible = producto.Disponible,
                 Variante = variante,
                 NivelTitulo = nivelTitulo,

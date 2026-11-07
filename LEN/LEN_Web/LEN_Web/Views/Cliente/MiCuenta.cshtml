@@ -46,7 +46,7 @@ Cerrar sesion es POST y no enlace para que otro sitio no lo pueda disparar
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="LenBloque-Titulo mb-0">Mis datos</h2>
                 <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
-                   asp-controller="Cliente" asp-action="EditarCuenta">Editar</a>
+                   asp-controller="Cliente" asp-action="EditarCuenta" asp-route-seccion="datos">Editar</a>
             </div>
 
             <partial name="_Datos" model="@(new DatosViewModel {
@@ -68,7 +68,7 @@ Cerrar sesion es POST y no enlace para que otro sitio no lo pueda disparar
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="LenBloque-Titulo mb-0">Mis direcciones</h2>
                 <a class="LenBoton LenBoton--Secundario LenBoton--Pequeno"
-                   asp-controller="Cliente" asp-action="EditarCuenta">Administrar</a>
+                   asp-controller="Cliente" asp-action="EditarCuenta" asp-route-seccion="direcciones">Administrar</a>
             </div>
 
             @if (Model.Direcciones.Count > 0)

@@ -20,8 +20,9 @@ namespace LEN_Web.Models
 
         public bool EsFavorito { get; set; }
 
-        // La principal va primera. Sin imagenes la galeria cae al marcador
-        public List<string> Imagenes { get; set; } = new();
+        // La principal va primera. Sin imagenes la galeria cae al marcador.
+        // BT-05: ImagenProducto y no solo la ruta, para tener el texto alternativo
+        public List<ImagenProducto> Imagenes { get; set; } = new();
 
         public List<VarianteProducto> Variantes { get; set; } = new();
 
