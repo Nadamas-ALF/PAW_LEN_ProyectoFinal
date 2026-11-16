@@ -94,20 +94,8 @@ El boton de favoritos solo sale con la sesion abierta
             <p class="LenTexto">@Model.Descripcion</p>
         }
 
-        @if (Model.Variantes.Any())
-        {
-            <div class="mb-4">
-                <label class="LenEtiqueta" for="Variante">Opciones disponibles</label>
-                <select class="LenCampo" id="Variante">
-                    @foreach (var variante in Model.Variantes)
-                    {
-                        <option value="@variante.IdVariante" data-stock="@variante.Stock">@variante.Etiqueta</option>
-                    }
-                </select>
-                @* Lo reescribe el JavaScript cuando cambia la seleccion *@
-                <span class="LenAyuda">Disponibilidad de esta opci&oacute;n: @Model.Variantes[0].Stock unidad(es).</span>
-            </div>
-        }
+        @* BT-06 / DEC-001: opcion 2. Se oculta el selector de variantes
+           hasta que el carrito soporte IdVariante. No se cambia la BD. *@
 
         @if (Model.Disponible)
         {
@@ -129,7 +117,7 @@ El boton de favoritos solo sale con la sesion abierta
             </div>
         }
 
-        @if (User.Identity!.IsAuthenticated)
+        @if (User.IsInRole("Cliente"))
         {
             <form class="mb-4" method="post" action="@(Model.EsFavorito ? "/Favorito/Eliminar" : "/Favorito/Agregar")">
                 @Html.AntiForgeryToken()

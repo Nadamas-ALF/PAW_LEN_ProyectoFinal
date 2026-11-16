@@ -59,9 +59,21 @@ namespace LEN_Web.Controllers
             return View(pedido);
         }
 
-        public IActionResult Favoritos()
+        // BT-07. Muestra solo los favoritos del usuario de la sesion.
+        // La API obtiene IdUsuario del JWT y el SP excluye productos inactivos.
+        public async Task<IActionResult> Favoritos()
         {
-            return View(DatosEjemplo.Favoritos(_entorno));
+            var resultado = await _api.Obtener<List<ProductoResumen>>("favoritos/mios");
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null)
+                return this.PaginaError(resultado);
+
+            // La tarjeta comparte el mismo modelo del catalogo.
+            foreach (var producto in resultado.Datos)
+                producto.Disponible = producto.Stock > 0;
+
+            return View(resultado.Datos);
         }
 
         // BT-02. Solo lectura: datos personales y direcciones activas.

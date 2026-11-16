@@ -80,6 +80,10 @@ builder.Services.AddScoped<ICategoriaServicio, CategoriaServicio>();
 builder.Services.AddScoped<IProductoRepositorio, ProductoRepositorio>();
 builder.Services.AddScoped<IProductoServicio, ProductoServicio>();
 
+// Favoritos: controlador API -> servicio -> repositorio -> SQL Server.
+builder.Services.AddScoped<IFavoritoRepositorio, FavoritoRepositorio>();
+builder.Services.AddScoped<IFavoritoServicio, FavoritoServicio>();
+
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(opciones =>
     {
