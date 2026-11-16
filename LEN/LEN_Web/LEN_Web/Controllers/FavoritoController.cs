@@ -1,43 +1,74 @@
+using LEN_Web.Utilidades;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LEN_Web.Controllers
 {
-    // Agregar y quitar favoritos. Sin vistas: la lista es Cliente/Favoritos y el
-    // corazon vive en la tarjeta del catalogo
-    //
-    // Los dos son stubs. Vuelven a donde se apreto el boton, que llega en
-    // urlRetorno para no perder los filtros de busqueda del catalogo
+    // BT-07. Los formularios POST estan protegidos con antiforgery.
+    // La API utiliza el JWT de la sesion para identificar al cliente.
     [Authorize(Roles = "Cliente")]
     public class FavoritoController : Controller
     {
-        private const string Pendiente =
-            "Los favoritos todav&iacute;a no se guardan: falta conectar el servidor.";
+        private readonly IClienteApi _api;
+
+        public FavoritoController(IClienteApi api)
+        {
+            _api = api;
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Agregar(int idProducto, string? urlRetorno)
+        public async Task<IActionResult> Agregar(int idProducto, string? urlRetorno)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (idProducto <= 0)
+            {
+                TempData["MensajeError"] = "Seleccione un producto válido.";
+                return Volver(urlRetorno);
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Post, $"favoritos/{idProducto}");
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (resultado.EsExito)
+                TempData["MensajeExito"] = "Producto agregado a favoritos.";
+            else if (resultado.Tipo == TipoResultadoApi.Invalido)
+                TempData["MensajeError"] = resultado.MensajeHtml ?? "No se pudo agregar el producto.";
+            else
+                return this.PaginaError(resultado);
+
             return Volver(urlRetorno);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Eliminar(int idProducto, string? urlRetorno)
+        public async Task<IActionResult> Eliminar(int idProducto, string? urlRetorno)
         {
-            TempData["MensajePendiente"] = Pendiente;
+            if (idProducto <= 0)
+            {
+                TempData["MensajeError"] = "Seleccione un producto válido.";
+                return Volver(urlRetorno);
+            }
+
+            var resultado = await _api.Enviar(HttpMethod.Delete, $"favoritos/{idProducto}");
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso)
+                return await this.SinPermiso(resultado);
+
+            if (resultado.EsExito)
+                TempData["MensajeExito"] = "Producto eliminado de favoritos.";
+            else if (resultado.Tipo == TipoResultadoApi.Invalido)
+                TempData["MensajeError"] = resultado.MensajeHtml ?? "No se pudo eliminar el favorito.";
+            else
+                return this.PaginaError(resultado);
+
             return Volver(urlRetorno);
         }
 
-        // Solo se acepta una direccion de este mismo sitio. Sin la comprobacion
-        // bastaria con armar el formulario a mano para mandar al usuario afuera
+        // Volver a la misma pagina de origen (con filtros) sin redirigir a otro dominio.
         private IActionResult Volver(string? urlRetorno)
         {
             if (!string.IsNullOrWhiteSpace(urlRetorno) && Url.IsLocalUrl(urlRetorno))
-            {
                 return Redirect(urlRetorno);
-            }
 
             return RedirectToAction("Favoritos", "Cliente");
         }
