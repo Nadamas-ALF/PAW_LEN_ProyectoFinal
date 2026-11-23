@@ -84,6 +84,10 @@ builder.Services.AddScoped<IProductoServicio, ProductoServicio>();
 builder.Services.AddScoped<IFavoritoRepositorio, FavoritoRepositorio>();
 builder.Services.AddScoped<IFavoritoServicio, FavoritoServicio>();
 
+// Pedidos (BT-10): controlador API -> servicio -> repositorio -> SQL Server.
+builder.Services.AddScoped<IPedidoRepositorio, PedidoRepositorio>();
+builder.Services.AddScoped<IPedidoServicio, PedidoServicio>();
+
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(opciones =>
     {

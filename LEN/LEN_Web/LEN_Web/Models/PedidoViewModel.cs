@@ -24,6 +24,10 @@ namespace LEN_Web.Models
 
         // Suma de unidades, no de lineas
         public int CantidadProductos { get; set; }
+
+        // BT-10. El mismo en todas las filas del API: el total sin paginar,
+        // para calcular TotalPaginas
+        public int TotalFilas { get; set; }
     }
 
     public class HistorialPedidosViewModel

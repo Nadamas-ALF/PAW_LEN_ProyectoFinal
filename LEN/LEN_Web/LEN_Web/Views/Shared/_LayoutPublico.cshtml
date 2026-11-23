@@ -8,6 +8,11 @@ Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
 @inject IClienteApi Api
 @{
     var cantidadCarrito = 0;
+
+    // La cuenta del cliente (/Cliente/MiCuenta) es solo del rol Cliente: un
+    // administrador que entra a la tienda va a su panel desde los mismos enlaces
+    var esAdministrador = User.IsInRole("Administrador");
+    var urlCuenta = esAdministrador ? "/Admin/Tablero" : "/Cliente/MiCuenta";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -42,7 +47,7 @@ Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
                     else
                     {
                         <li data-estado="sesion-abierta">
-                            <a href="/Cliente/MiCuenta">Hola, @User.Identity.Name</a>
+                            <a href="@urlCuenta">Hola, @User.Identity.Name</a>
                             <form method="post" action="/Acceso/CerrarSesion">
                                 @Html.AntiForgeryToken()
                                 <button type="submit">Cerrar sesi&oacute;n</button>
@@ -100,7 +105,7 @@ Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
 
             <ul class="LenAcciones">
                 <li>
-                    <a class="LenAccion" href="/Cliente/MiCuenta" aria-label="Mi cuenta">
+                    <a class="LenAccion" href="@urlCuenta" aria-label="@(esAdministrador ? "Panel de administración" : "Mi cuenta")">
                         <i class="bi bi-person" aria-hidden="true"></i>
                     </a>
                 </li>
@@ -173,7 +178,7 @@ Cerrar sesion queda listo pero oculto porque no hay sesion que cerrar todavia
                         }
                         else
                         {
-                            <li><a href="/Cliente/MiCuenta">Mis datos</a></li>
+                            <li><a href="@urlCuenta">@(esAdministrador ? "Panel de administración" : "Mis datos")</a></li>
                         }
                         <li><a href="/Cliente/MisPedidos">Mis pedidos</a></li>
                     </ul>

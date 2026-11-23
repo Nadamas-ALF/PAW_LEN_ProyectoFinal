@@ -43,6 +43,9 @@ namespace LEN_Web.Models
         // Suma de unidades, no de lineas
         public int CantidadProductos { get; set; }
 
+        // BT-11. El mismo en todas las filas del API: el total sin paginar
+        public int TotalFilas { get; set; }
+
         public string FacturaVisible => string.IsNullOrWhiteSpace(NumeroFactura)
             ? $"Pedido #{IdPedido}"
             : NumeroFactura;
@@ -102,7 +105,24 @@ namespace LEN_Web.Models
 
         public string? ComprobantePago { get; set; }
 
+        // BT-11. HU-ADM-PED-002 CA-2. Pagado, Pendiente o Anulado. Null sin pago
+        public string? EstadoPago { get; set; }
+
+        public DateTime? FechaPago { get; set; }
+
+        // TB_ESTADO_PAGO no guarda clase CSS: se elige segun el estado
+        public string ClaseCssEstadoPago => EstadoPago switch
+        {
+            "Pagado" => "LenBadge--Exito",
+            "Pendiente" => "LenBadge--Proceso",
+            "Anulado" => "LenBadge--Negativo",
+            _ => "LenBadge--Neutro"
+        };
+
         public List<LineaPedido> Lineas { get; set; } = new();
+
+        // BT-11. HU-ADM-PED-005. De TB_BITACORA, el mas reciente primero
+        public List<CambioPedido> Historial { get; set; } = new();
 
         // Solo los estados a los que se puede pasar desde el actual. Los calcula
         // el servicio, no la vista: Pagado va a En preparacion o Cancelado,
@@ -114,6 +134,29 @@ namespace LEN_Web.Models
         public string FacturaVisible => string.IsNullOrWhiteSpace(NumeroFactura)
             ? $"Pedido #{IdPedido}"
             : NumeroFactura;
+    }
+
+    // BT-11. HU-ADM-PED-005. Una fila del historial de cambios de un pedido
+    // (SP_Pedido_ListarHistorial). Solo lectura
+    public class CambioPedido
+    {
+        public DateTime FechaHora { get; set; }
+
+        // Confirmar compra o Cambiar estado
+        public string Accion { get; set; } = string.Empty;
+
+        public string NombreUsuario { get; set; } = string.Empty;
+
+        public string? CorreoUsuario { get; set; }
+
+        // Null en las acciones que no cambian el estado
+        public string? EstadoAnterior { get; set; }
+
+        public string? EstadoNuevo { get; set; }
+
+        public string? MotivoCancelacion { get; set; }
+
+        public bool EsCambioDeEstado => !string.IsNullOrWhiteSpace(EstadoNuevo);
     }
 
     public class PagoAdmin

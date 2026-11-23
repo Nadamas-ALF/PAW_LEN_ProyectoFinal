@@ -2605,6 +2605,14 @@ BEGIN
         PE.IdEstadoPedido,
         EP.Nombre   AS NombreEstado,
         EP.ClaseCss AS ClaseCssEstado,
+        /* BT-11. Lo que ve el cliente. Va para que la fila tenga las mismas
+           columnas que SP_Pedido_ObtenerDetalle y el API reuse su DTO */
+        CASE PE.IdEstadoPedido
+             WHEN 1 THEN N'Comprada'
+             WHEN 2 THEN N'En camino'
+             WHEN 3 THEN N'Recibido'
+             ELSE EP.Nombre
+        END AS EstadoVisible,
         PE.MotivoCancelacion,
         U.IdUsuario,
         U.Nombre + N' ' + U.Apellido AS NombreCliente,
@@ -2625,7 +2633,14 @@ BEGIN
         P.Nombre AS NombreProducto,
         DP.Cantidad,
         DP.PrecioUnitario,
-        DP.SubtotalLinea
+        DP.SubtotalLinea,
+        /* BT-11. Misma razon que EstadoVisible */
+        (
+            SELECT TOP (1) I.RutaImagen
+            FROM dbo.TB_IMAGEN_PRODUCTO AS I
+            WHERE I.IdProducto = P.IdProducto AND I.Activo = 1
+            ORDER BY I.EsPrincipal DESC, I.IdImagen
+        ) AS RutaImagen
     FROM dbo.TB_PEDIDO AS PE
     INNER JOIN dbo.TB_USUARIO         AS U   ON U.IdUsuario        = PE.IdUsuario
     INNER JOIN dbo.TB_ESTADO_PEDIDO   AS EP  ON EP.IdEstadoPedido  = PE.IdEstadoPedido
@@ -2752,6 +2767,45 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         THROW;
     END CATCH;
+END;
+GO
+
+/* BT-11. HU-ADM-PED-005. Historial de cambios de un pedido, de solo
+   lectura. Sale de TB_BITACORA con Entidad = TB_PEDIDO e IdRegistro = el
+   pedido: hoy son "Confirmar compra" (SP_Pedido_Confirmar) y "Cambiar
+   estado" (SP_Pedido_CambiarEstado).
+   Del JSON de ValorAnterior y ValorNuevo saca lo que cambio: el estado
+   anterior, el nuevo y el motivo. Los dos JSON van completos tambien, para
+   acciones que se agreguen despues.
+   Devuelve: el mas reciente primero
+   Ejemplo:  EXEC dbo.SP_Pedido_ListarHistorial @IdPedido = 1; */
+CREATE OR ALTER PROCEDURE dbo.SP_Pedido_ListarHistorial
+    @IdPedido INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        B.IdBitacora,
+        B.FechaHora,
+        B.Accion,
+        B.IdUsuario,
+        /* NULL en IdUsuario es una accion que no origino una persona */
+        ISNULL(U.Nombre + N' ' + U.Apellido, N'Sistema') AS NombreUsuario,
+        U.Correo AS CorreoUsuario,
+        CASE WHEN ISJSON(B.ValorAnterior) = 1
+             THEN JSON_VALUE(B.ValorAnterior, '$.NombreEstado') END AS EstadoAnterior,
+        CASE WHEN ISJSON(B.ValorNuevo) = 1
+             THEN JSON_VALUE(B.ValorNuevo, '$.NombreEstado') END AS EstadoNuevo,
+        CASE WHEN ISJSON(B.ValorNuevo) = 1
+             THEN JSON_VALUE(B.ValorNuevo, '$.MotivoCancelacion') END AS MotivoCancelacion,
+        B.ValorAnterior,
+        B.ValorNuevo
+    FROM dbo.TB_BITACORA AS B
+    LEFT JOIN dbo.TB_USUARIO AS U ON U.IdUsuario = B.IdUsuario
+    WHERE B.Entidad = N'TB_PEDIDO'
+      AND B.IdRegistro = @IdPedido
+    ORDER BY B.FechaHora DESC, B.IdBitacora DESC;
 END;
 GO
 

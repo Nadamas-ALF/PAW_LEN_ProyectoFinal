@@ -1,9 +1,10 @@
 @*
 Detalle del pedido en el panel. Origen Admin/PedidoDetalle.html. Layout _LayoutAdmin
 Unica pantalla donde se cambia el estado de un pedido. Solo Administrador
-Datos de DetallePedidoAdminViewModel mientras no exista SP_Pedido_ObtenerDetalleAdministracion
-El selector ofrece solo los estados validos desde el actual, que calcula el modelo
-Cancelar devuelve stock y anula pago y factura, y no se puede deshacer
+Datos de DetallePedidoAdminViewModel, del API (SP_Pedido_ObtenerDetalleAdministracion). BT-11
+El selector ofrece solo los estados validos desde el actual, que calcula el API (HU-ADM-PED-003 CA-4)
+Cancelar devuelve stock y anula pago y factura, y no se puede deshacer (HU-ADM-PED-004)
+El historial sale de TB_BITACORA (SP_Pedido_ListarHistorial) y es de solo lectura
 *@
 @model DetallePedidoAdminViewModel
 @{
@@ -112,6 +113,19 @@ Cancelar devuelve stock y anula pago y factura, y no se puede deshacer
 
                 <dt>Comprobante simulado</dt>
                 <dd>@(string.IsNullOrWhiteSpace(Model.ComprobantePago) ? "No registrado" : Model.ComprobantePago)</dd>
+
+                @* BT-11. HU-ADM-PED-002 CA-2: el pago completo. Al cancelar queda Anulado *@
+                <dt>Estado del pago</dt>
+                <dd>
+                    <partial name="_InsigniaEstado" model="@(new InsigniaEstadoViewModel {
+                        Etiqueta = string.IsNullOrWhiteSpace(Model.EstadoPago) ? "No registrado" : Model.EstadoPago,
+                        ClaseCss = Model.ClaseCssEstadoPago })" />
+                    @if (Model.FechaPago.HasValue)
+                    {
+                        <br>
+                        <small class="LenSuave">@Model.FechaPago.Value.ToString("dd/MM/yyyy hh:mm tt", culturaLocal)</small>
+                    }
+                </dd>
             </dl>
         </article>
     </div>
@@ -184,18 +198,47 @@ Cancelar devuelve stock y anula pago y factura, y no se puede deshacer
         </article>
 
 
-        @* Pendiente de verdad: sale de TB_BITACORA y falta el procedimiento *@
+        @* BT-11. HU-ADM-PED-005. TB_BITACORA con Entidad = TB_PEDIDO e
+           IdRegistro = este pedido (CA-1 y CA-3): fecha, accion, usuario y que
+           cambio (CA-2). Solo lectura: no hay ningun boton (CA-4) *@
         <article class="LenPanel p-0 mt-4">
             <div class="LenPanel-Cabecera">
-                <h2 class="LenPanel-Titulo">
-                    Historial de cambios <span class="LenBadge LenBadge--Neutro ms-1">Pendiente</span>
-                </h2>
+                <h2 class="LenPanel-Titulo">Historial de cambios</h2>
             </div>
-            <p class="LenAyuda p-3 m-0">
-                Sale de TB_BITACORA filtrando por Entidad = TB_PEDIDO e
-                IdRegistro = este pedido. Falta el procedimiento de
-                consulta y la pantalla.
-            </p>
+
+            @if (Model.Historial.Count > 0)
+            {
+                <ol class="list-unstyled p-3 m-0 d-flex flex-column gap-3">
+                    @foreach (var cambio in Model.Historial)
+                    {
+                        <li>
+                            <strong>@cambio.Accion</strong>
+                            <small class="LenSuave d-block">
+                                @cambio.FechaHora.ToString("dd/MM/yyyy hh:mm tt", culturaLocal)
+                                &middot; @cambio.NombreUsuario
+                            </small>
+
+                            @if (cambio.EsCambioDeEstado)
+                            {
+                                <span class="d-block">
+                                    @(cambio.EstadoAnterior ?? "—") &rarr; @cambio.EstadoNuevo
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(cambio.MotivoCancelacion))
+                            {
+                                <small class="LenSuave d-block">Motivo: @cambio.MotivoCancelacion</small>
+                            }
+                        </li>
+                    }
+                </ol>
+            }
+            else
+            {
+                <p class="LenAyuda p-3 m-0">
+                    Este pedido todav&iacute;a no tiene cambios registrados en la bit&aacute;cora.
+                </p>
+            }
         </article>
     </div>
 </div>

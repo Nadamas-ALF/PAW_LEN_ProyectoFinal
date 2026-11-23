@@ -37,24 +37,79 @@ namespace LEN_Web.Controllers
             return View(DatosEjemplo.Confirmacion(_entorno));
         }
 
-        public IActionResult MisPedidos(int pagina = 1)
+        // BT-10. HU-PED-006. El API solo devuelve los pedidos del usuario del
+        // token (CA-1), ya con el estado traducido para el cliente (CA-5)
+        private const int PedidosPorPagina = 10;
+
+        public async Task<IActionResult> MisPedidos(int pagina = 1)
         {
-            return View(DatosEjemplo.HistorialPedidos(pagina));
+            if (pagina < 1) pagina = 1;
+
+            var resultado = await _api.Obtener<List<PedidoResumen>>(
+                $"pedidos/mios?pagina={pagina}&tamanoPagina={PedidosPorPagina}");
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null) return this.PaginaError(resultado);
+
+            // Una pagina que ya no existe vuelve a la primera
+            if (resultado.Datos.Count == 0 && pagina > 1)
+                return RedirectToAction(nameof(MisPedidos));
+
+            foreach (var pedido in resultado.Datos)
+            {
+                // un pedido sin factura todavia no tiene numero: se muestra el Id
+                if (string.IsNullOrEmpty(pedido.NumeroFactura))
+                    pedido.NumeroFactura = $"Pedido #{pedido.IdPedido}";
+            }
+
+            // CA-2. Paginado con el TotalFilas que manda el procedimiento
+            var totalFilas = resultado.Datos.FirstOrDefault()?.TotalFilas ?? 0;
+
+            return View(new HistorialPedidosViewModel
+            {
+                Pedidos = resultado.Datos,
+                PaginaActual = pagina,
+                TotalPaginas = Math.Max(1, (int)Math.Ceiling(totalFilas / (double)PedidosPorPagina))
+            });
         }
 
-        // El procedimiento recibe IdPedido y IdUsuario los dos: con solo el
-        // IdPedido cualquiera veria el pedido de otro cambiando el numero. Si no
-        // es suyo se vuelve al historial con aviso, no se muestra un 404 que ya
-        // confirmaria que el pedido existe
-        public IActionResult PedidoDetalle(int idPedido)
+        // BT-10. HU-PED-007. El procedimiento recibe IdPedido y el IdUsuario del
+        // token los dos (CA-1): con solo el IdPedido cualquiera veria el pedido de
+        // otro cambiando el numero. Si no es suyo se vuelve al historial con aviso,
+        // no se muestra un 404 que ya confirmaria que el pedido existe (CA-2)
+        public async Task<IActionResult> PedidoDetalle(int idPedido)
         {
-            var pedido = DatosEjemplo.DetallePedido(_entorno, idPedido);
+            var resultado = await _api.Obtener<DetallePedidoViewModel>($"pedidos/mios/{idPedido}");
 
-            if (pedido is null)
+            if (resultado.Tipo == TipoResultadoApi.NoEncontrado)
             {
                 TempData["MensajeError"] = "No fue posible abrir el pedido solicitado.";
                 return RedirectToAction(nameof(MisPedidos));
             }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null) return this.PaginaError(resultado);
+
+            var pedido = resultado.Datos;
+
+            if (string.IsNullOrEmpty(pedido.NumeroFactura))
+                pedido.NumeroFactura = $"Pedido #{pedido.IdPedido}";
+
+            // CA-4. TB_ESTADO_PAGO no guarda clase CSS: se elige aca segun el
+            // estado. Un pago anulado no se pinta como pagado
+            if (string.IsNullOrEmpty(pedido.EstadoPago))
+            {
+                pedido.EstadoPago = "Sin registrar";
+                pedido.NombreMetodoPago = "—";
+            }
+
+            pedido.ClaseCssEstadoPago = pedido.EstadoPago switch
+            {
+                "Pagado" => "LenBadge--Exito",
+                "Pendiente" => "LenBadge--Proceso",
+                "Anulado" => "LenBadge--Negativo",
+                _ => "LenBadge--Neutro"
+            };
 
             return View(pedido);
         }
