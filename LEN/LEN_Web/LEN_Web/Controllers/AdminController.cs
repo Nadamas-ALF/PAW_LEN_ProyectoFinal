@@ -229,28 +229,86 @@ namespace LEN_Web.Controllers
             return View(resultado.Datos);
         }
 
-        public IActionResult Pedidos(
+        // BT-11. HU-ADM-PED-001
+        private const int PedidosAdminPorPagina = 10;
+
+        public async Task<IActionResult> Pedidos(
             string? busqueda,
             int? idEstado,
             string? fechaInicio,
             string? fechaFin,
             int pagina = 1)
         {
-            return View(DatosEjemplo.PedidosAdmin(busqueda, idEstado, fechaInicio, fechaFin, pagina));
+            if (pagina < 1) pagina = 1;
+
+            var estados = await _api.Obtener<List<EstadoPedidoOpcion>>("pedidos/estados");
+            if (estados.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(estados);
+            if (!estados.EsExito || estados.Datos is null) return this.PaginaError(estados);
+
+            var modelo = new ListadoPedidosAdminViewModel
+            {
+                Estados = estados.Datos,
+                Busqueda = busqueda,
+                IdEstado = idEstado,
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                PaginaActual = pagina
+            };
+
+            // Los filtros viajan por GET para poder compartir la busqueda. Una
+            // fecha que no viene en yyyy-MM-dd (la del campo date) se ignora
+            var filtros = new List<string> { $"pagina={pagina}", $"tamanoPagina={PedidosAdminPorPagina}" };
+            if (!string.IsNullOrWhiteSpace(busqueda)) filtros.Add($"busqueda={Uri.EscapeDataString(busqueda.Trim())}");
+            if (idEstado.HasValue) filtros.Add($"idEstadoPedido={idEstado.Value}");
+            if (EsFecha(fechaInicio)) filtros.Add($"fechaInicio={fechaInicio}");
+            if (EsFecha(fechaFin)) filtros.Add($"fechaFin={fechaFin}");
+
+            var resultado = await _api.Obtener<List<PedidoAdminResumen>>($"pedidos?{string.Join("&", filtros)}");
+
+            // Por ejemplo, la fecha de inicio despues de la de fin: se avisa y la
+            // pantalla queda con los filtros para corregirlos
+            if (resultado.Tipo == TipoResultadoApi.Invalido)
+            {
+                TempData["MensajeError"] = resultado.MensajeHtml;
+                return View(modelo);
+            }
+
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null) return this.PaginaError(resultado);
+
+            if (resultado.Datos.Count == 0 && pagina > 1)
+                return RedirectToAction(nameof(Pedidos), new { busqueda, idEstado, fechaInicio, fechaFin });
+
+            var totalFilas = resultado.Datos.FirstOrDefault()?.TotalFilas ?? 0;
+
+            modelo.Pedidos = resultado.Datos;
+            modelo.TotalPaginas = Math.Max(1, (int)Math.Ceiling(totalFilas / (double)PedidosAdminPorPagina));
+
+            return View(modelo);
         }
 
-        // Aqui no se filtra por usuario: el administrador ve cualquier pedido
-        public IActionResult PedidoDetalle(int idPedido)
-        {
-            var pedido = DatosEjemplo.DetallePedidoAdmin(_entorno, idPedido);
+        private static bool EsFecha(string? valor) =>
+            DateTime.TryParseExact(valor, "yyyy-MM-dd",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out _);
 
-            if (pedido is null)
+        // BT-11. HU-ADM-PED-002. Aqui no se filtra por usuario: el administrador
+        // ve cualquier pedido. Trae tambien los estados a los que se puede pasar
+        // (HU-ADM-PED-003) y el historial de cambios (HU-ADM-PED-005)
+        public async Task<IActionResult> PedidoDetalle(int idPedido)
+        {
+            var resultado = await _api.Obtener<DetallePedidoAdminViewModel>($"pedidos/{idPedido}");
+
+            if (resultado.Tipo == TipoResultadoApi.NoEncontrado)
             {
                 TempData["MensajeError"] = "No fue posible abrir el pedido solicitado.";
                 return RedirectToAction(nameof(Pedidos));
             }
 
-            return View(pedido);
+            if (resultado.Tipo == TipoResultadoApi.SinPermiso) return await this.SinPermiso(resultado);
+            if (!resultado.EsExito || resultado.Datos is null) return this.PaginaError(resultado);
+
+            return View(resultado.Datos);
         }
 
         public IActionResult Pagos(
